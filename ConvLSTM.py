@@ -4,7 +4,7 @@ import torch
 import torch.nn.functional as F
 import torch.nn as nn
 
-from activation import Hardsigmoid,SatLU
+from activations import Hardsigmoid,SatLU
 
 class ConvLSTMCell(nn.Module):
     """
