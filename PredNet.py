@@ -1,6 +1,5 @@
 # PredNet architecture
 
-import numpy as np
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
@@ -352,9 +351,9 @@ class PredNet(nn.Module):
             (H_tm1,C_tm1),E_tm1 = (H_t,C_t),E_t
             errors.append(E_t)
         # Return errors as tensor
-        errors_t = torch.zeros(seq_len,nb_layers)
+        errors_t = torch.zeros(seq_len,self.nb_layers)
         for t in range(seq_len):
-            for l in range(nb_layers):
+            for l in range(self.nb_layers):
                 errors_t[t,l] = torch.mean(errors[t][l])
         # Return preds as tensor
         preds_t = [pred.unsqueeze(1) for pred in preds]

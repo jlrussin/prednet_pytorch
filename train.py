@@ -45,20 +45,21 @@ parser.add_argument('--num_iters', type=int, default=75000,
 parser.add_argument('--model_type', choices=['PredNet','ConvLSTM'],
                     default='PredNet', help='Type of model to use.')
 # Hyperparameters for PredNet
-parser.add_argument('--stack_sizes', nargs='+', default=[3,48,96,192],
+parser.add_argument('--stack_sizes', type=int, nargs='+', default=[3,48,96,192],
                     help='number of channels in targets (A) and ' +
                          'predictions (Ahat) in each layer. ' +
                          'Length should be equal to number of layers')
-parser.add_argument('--R_stack_sizes', nargs='+', default=[3,48,96,192],
+parser.add_argument('--R_stack_sizes', type=int, nargs='+',
+                    default=[3,48,96,192],
                     help='Number of channels in R modules. ' +
                          'Length should be equal to number of layers')
-parser.add_argument('--A_kernel_sizes', nargs='+', default=[3,3,3],
+parser.add_argument('--A_kernel_sizes', type=int, nargs='+', default=[3,3,3],
                     help='Kernel sizes for each A module. ' +
                          'Length should be equal to (number of layers - 1)')
-parser.add_argument('--Ahat_kernel_sizes', nargs='+', default=[3,3,3,3],
-                    help='Kernel sizes for each Ahat module. ' +
-                         'Length should be equal to number of layers')
-parser.add_argument('--R_kernel_sizes', nargs='+', default=[3,3,3,3],
+parser.add_argument('--Ahat_kernel_sizes', type=int, nargs='+',
+                    default=[3,3,3,3], help='Kernel sizes for each Ahat' +
+                    'module. Length should be equal to number of layers')
+parser.add_argument('--R_kernel_sizes', type=int, nargs='+', default=[3,3,3,3],
                     help='Kernel sizes for each Ahat module' +
                          'Length should be equal to number of layers')
 parser.add_argument('--use_satlu', type=str2bool, default=True,
@@ -80,7 +81,7 @@ parser.add_argument('--hidden_channels', type=int, default=192,
 parser.add_argument('--kernel_size', type=int, default=3,
                     help='Kernel size in ConvLSTM')
 # Hyperparameters shared by PredNet and ConvLSTM
-parser.add_argument('--in_channels', type=int, default=1,
+parser.add_argument('--in_channels', type=int, default=3,
                     help='Number of channels in input images')
 parser.add_argument('--LSTM_act', default='tanh',
                     choices=['relu','sigmoid','tanh','hardsigmoid'],
@@ -97,14 +98,15 @@ parser.add_argument('--load_weights_from', default=None,
                     help='Path to saved weights')
 
 # Optimization
-parser.add_argument('--loss', default='L1',choices=['E','L1','MSE'])
+parser.add_argument('--loss', default='E',choices=['E','L1','MSE'])
 parser.add_argument('--learning_rate', type=float, default=0.001,
                     help='Fixed learning rate for Adam optimizer')
-parser.add_argument('--lr_steps', type=int, default=0,
+parser.add_argument('--lr_steps', type=int, default=1,
                     help='num times to decrease learning rate by factor of 0.1')
 parser.add_argument('--time0_lambda', type=float, default=0.0,
                     help='Weight of loss on first time step')
-parser.add_argument('--layer_lambdas', nargs='+', default=[1.0,0.0,0.0,0.0],
+parser.add_argument('--layer_lambdas', type=float,
+                    nargs='+', default=[1.0,0.0,0.0,0.0],
                     help='Weight of loss on error of each layer' +
                          'Length should be equal to number of layers')
 
@@ -152,7 +154,7 @@ def main(args):
     # Custom error loss function for PredNet
     class ELoss(nn.Module):
         def __init__(self,time_lambdas,layer_lambdas):
-            super(E_loss,self).__init__()
+            super(ELoss,self).__init__()
             seq_len = len(time_lambdas)
             nb_layers = len(layer_lambdas)
             time_lambdas = torch.tensor(time_lambdas)
@@ -166,9 +168,9 @@ def main(args):
 
     # Select loss function
     if args.loss == 'E':
-        seq_len = train_data[0].shape[1]
+        seq_len = train_data[0].shape[0]
         time_lambdas = [args.time0_lambda] + [1.0]*(seq_len-1)
-        loss_fn = ELoss(args.time_lambdas,args.layer_lambdas)
+        loss_fn = ELoss(time_lambdas,args.layer_lambdas)
     elif args.loss == 'L1':
         loss_fn = nn.L1Loss()
     elif args.loss == 'MSE':
@@ -179,7 +181,8 @@ def main(args):
     params = model.parameters()
     optimizer = optim.Adam(params, lr=args.learning_rate)
     lrs_step_size = args.num_iters // (args.lr_steps+1)
-    scheduler = optim.StepLR(optimizer,step_size=lrs_step_size,gamma=0.1)
+    scheduler = optim.lr_scheduler.StepLR(optimizer,step_size=lrs_step_size,
+                                          gamma=0.1)
 
     # Training loop:
     iter = 0
@@ -220,17 +223,17 @@ def main(args):
         if epoch_count % args.checkpoint_every == 0 or last_epoch:
             # Train
             print("Checking training loss...")
-            train_loss = checkpoint(train_loader, model, device, args)
+            train_loss = checkpoint(train_loader, model, loss_fn, device, args)
             print("Training loss is ", train_loss)
             train_losses.append(train_loss)
             # Validation
             print("Checking validation loss...")
-            val_loss = checkpoint(val_loader, model, device, args)
+            val_loss = checkpoint(val_loader, model, loss_fn, device, args)
             print("Validation loss is ", val_loss)
             val_losses.append(val_loss)
             # Test
             print("Checking test loss...")
-            test_loss = checkpoint(test_loader, model, device, args)
+            test_loss = checkpoint(test_loader, model, loss_fn, device, args)
             print("Test loss is ", test_loss)
             test_losses.append(test_loss)
             # Write stats file
@@ -252,7 +255,7 @@ def main(args):
                                args.checkpoint_path)
 
 
-def checkpoint(dataloader, model, device, args):
+def checkpoint(dataloader, model, loss_fn, device, args):
     model.eval()
     with torch.no_grad():
         losses = []

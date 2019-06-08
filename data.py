@@ -22,7 +22,8 @@ class KITTI(Dataset):
             end_loc = cur_loc + seq_len - 1
             end_source = self.sources[end_loc]
             if cur_source == end_source:
-                img_tensor = torch.tensor(X[cur_loc:end_loc+1]).unsqueeze(0)
+                img_tensor = torch.tensor(X[cur_loc:end_loc+1],dtype=torch.float)
+                img_tensor = img_tensor.unsqueeze(0)
                 img_seqs.append(img_tensor)
                 cur_loc += seq_len
             else:
