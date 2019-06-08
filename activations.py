@@ -1,3 +1,6 @@
+import torch
+import torch.nn as nn
+
 # Hardsigmoid activation function - used for ConvLSTM
 class Hardsigmoid(nn.Module):
     def __init__(self):
