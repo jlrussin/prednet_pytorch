@@ -5,7 +5,7 @@ import torch
 import torch.nn.functional as F
 import torch.nn as nn
 
-from activation import Hardsigmoid,SatLU
+from activations import Hardsigmoid,SatLU
 
 # Convolutional LSTM cell used for R cells
 class RCell(nn.Module):
