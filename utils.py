@@ -1,4 +1,5 @@
 import torch.nn as nn
+from activations import Hardsigmoid, SatLU
 
 def str2bool(v):
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
