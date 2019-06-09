@@ -263,6 +263,7 @@ def checkpoint(dataloader, model, loss_fn, device, args):
         losses = []
         for X in dataloader:
             # Forward
+            X = X.to(device)
             if args.model_type == 'PredNet':
                 preds,errors = model(X)
             else:
