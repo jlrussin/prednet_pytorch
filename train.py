@@ -198,6 +198,7 @@ def main(args):
             iter += 1
             optimizer.zero_grad()
             # Forward
+            X = X.to(device)
             if args.model_type == 'PredNet':
                 preds,errors = model(X)
             else:
