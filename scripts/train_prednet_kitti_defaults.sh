@@ -3,7 +3,7 @@
 #SBATCH -A ecortex
 #SBATCH --mem=8G
 #SBATCH --time=48:00:00
-#SBATCH --gres=gpu:2
+#SBATCH --gres=gpu:1
 #SBATCH -c 4
 
 export HOME=`getent passwd $USER | cut -d':' -f6`
