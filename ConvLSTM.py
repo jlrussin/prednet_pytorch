@@ -20,7 +20,7 @@ class ConvLSTMCell(nn.Module):
     input.
     """
     def __init__(self, in_channels, hidden_channels, kernel_size,
-                 LSTM_act, LSTM_c_act, bias=True, FC=False):
+                 LSTM_act, LSTM_c_act, bias=True, FC=False:
         super(ConvLSTMCell, self).__init__()
         self.in_channels = in_channels
         self.hidden_channels = hidden_channels
@@ -120,7 +120,7 @@ class ConvLSTMCell(nn.Module):
 
 class ConvLSTM(nn.Module):
     def __init__(self, in_channels, hidden_channels, kernel_size,
-                 LSTM_act, LSTM_c_act, bias=True, FC=False):
+                 LSTM_act, LSTM_c_act, bias=True, FC=False, device='cpu'):
         super(ConvLSTM,self).__init__()
         self.in_channels = in_channels
         self.hidden_channels = hidden_channels
@@ -129,6 +129,7 @@ class ConvLSTM(nn.Module):
         self.LSTM_c_act = LSTM_c_act
         self.bias = bias
         self.FC = FC # use fully connected ConvLSTM
+        self.device = device
 
         self.cell = ConvLSTMCell(in_channels, hidden_channels, kernel_size,
                                  LSTM_act, LSTM_c_act, bias=True, FC=False)
@@ -160,4 +161,6 @@ class ConvLSTM(nn.Module):
         # Hidden states initialized with zeros
         H_0 = torch.zeros(batch_size,hidden_channels,height,width)
         C_0 = torch.zeros(batch_size,hidden_channels,height,width)
+        H_0.to(self.device)
+        C_0.to(self.device)
         return (H_0,C_0)

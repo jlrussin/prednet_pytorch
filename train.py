@@ -141,11 +141,12 @@ def main(args):
                         args.A_kernel_sizes,args.Ahat_kernel_sizes,
                         args.R_kernel_sizes,args.use_satlu,args.pixel_max,
                         args.satlu_act,args.error_act,args.LSTM_act,
-                        args.LSTM_c_act,args.bias,args.use_1x1_out,args.FC)
+                        args.LSTM_c_act,args.bias,args.use_1x1_out,args.FC,
+                        device)
     elif args.model_type == 'ConvLSTM':
         model = ConvLSTM(args.in_channels,args.hidden_channels,
                          args.kernel_size,args.LSTM_act,args.LSTM_c_act,
-                         args.bias, args.FC)
+                         args.bias,args.FC,device)
 
     if args.load_weights_from is not None:
         model.load_state_dict(torch.load(args.load_weights_from))

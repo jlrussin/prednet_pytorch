@@ -227,7 +227,7 @@ class PredNet(nn.Module):
                  A_kernel_sizes,Ahat_kernel_sizes,R_kernel_sizes,
                  use_satlu,pixel_max,satlu_act,error_act,
                  LSTM_act,LSTM_c_act,bias=True,
-                 use_1x1_out=True,FC=False):
+                 use_1x1_out=True,FC=False,device='cpu'):
         super(PredNet,self).__init__()
         self.in_channels = in_channels
         self.stack_sizes = stack_sizes
@@ -244,6 +244,7 @@ class PredNet(nn.Module):
         self.bias = bias
         self.use_1x1_out=use_1x1_out
         self.FC = FC # use fully connected ConvLSTM
+        self.device = device
 
         # Make sure consistent number of layers
         self.nb_layers = len(stack_sizes)
@@ -373,9 +374,9 @@ class PredNet(nn.Module):
             channels = self.stack_sizes[l]
             R_channels = self.R_stack_sizes[l]
             # All hidden states initialized with zeros
-            Hl = torch.zeros(batch_size,R_channels,height,width)
-            Cl = torch.zeros(batch_size,R_channels,height,width)
-            El = torch.zeros(batch_size,2*channels,height,width)
+            Hl = torch.zeros(batch_size,R_channels,height,width).to(self.device)
+            Cl = torch.zeros(batch_size,R_channels,height,width).to(self.device)
+            El = torch.zeros(batch_size,2*channels,height,width).to(self.device)
             H_0.append(Hl)
             C_0.append(Cl)
             E_0.append(El)
