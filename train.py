@@ -216,7 +216,8 @@ def main(args):
                 loss_datapoint = loss.data.item()
                 print('Epoch:', epoch_count,
                       'Iter:', iter,
-                      'Loss:', loss_datapoint)
+                      'Loss:', loss_datapoint,
+                      'lr:', scheduler.get_lr())
                 loss_data.append(loss_datapoint)
         # Checkpoint
         last_epoch = (iter >= args.num_iters)
