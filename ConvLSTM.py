@@ -20,7 +20,7 @@ class ConvLSTMCell(nn.Module):
     input.
     """
     def __init__(self, in_channels, hidden_channels, kernel_size,
-                 LSTM_act, LSTM_c_act, bias=True, FC=False:
+                 LSTM_act, LSTM_c_act, bias=True, FC=False):
         super(ConvLSTMCell, self).__init__()
         self.in_channels = in_channels
         self.hidden_channels = hidden_channels
