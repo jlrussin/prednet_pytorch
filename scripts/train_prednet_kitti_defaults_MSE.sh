@@ -16,7 +16,7 @@ conda activate pytorch1.0
 echo "Training PredNet with MSE and default hyperparameters on KITTI dataset"
 
 python train.py \
---loss prednet_MSE \
+--loss MSE \
 --out_data_file train_prednet_kitti_defaults_mse.json \
 --checkpoint_path ../model_weights/kitti_defaults_mse.pt \
 --checkpoint_every 20 \
