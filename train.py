@@ -99,7 +99,7 @@ parser.add_argument('--load_weights_from', default=None,
                     help='Path to saved weights')
 
 # Optimization
-parser.add_argument('--loss', default='E',choices=['E','twMSE','twL1'])
+parser.add_argument('--loss', default='E',choices=['E','MSE','L1'])
 parser.add_argument('--learning_rate', type=float, default=0.001,
                     help='Fixed learning rate for Adam optimizer')
 parser.add_argument('--lr_steps', type=int, default=1,
