@@ -251,7 +251,7 @@ def checkpoint(dataloader, model, device, args):
                 preds = model(X)
             # Compute loss
             X_no_t0 = X[:,1:,:,:,:]
-            loss = loss_fn(preds,X_no_t0)
+            loss = mse_loss(preds,X_no_t0)
             # Record loss
             loss_datapoint = loss.data.item()
             losses.append(loss_datapoint)
