@@ -204,17 +204,17 @@ def main(args):
         if epoch_count % args.checkpoint_every == 0 or last_epoch:
             # Train
             print("Checking training loss...")
-            train_loss = checkpoint(train_loader, model, loss_fn, device, args)
+            train_loss = checkpoint(train_loader, model, device, args)
             print("Training loss is ", train_loss)
             train_losses.append(train_loss)
             # Validation
             print("Checking validation loss...")
-            val_loss = checkpoint(val_loader, model, loss_fn, device, args)
+            val_loss = checkpoint(val_loader, model, device, args)
             print("Validation loss is ", val_loss)
             val_losses.append(val_loss)
             # Test
             print("Checking test loss...")
-            test_loss = checkpoint(test_loader, model, loss_fn, device, args)
+            test_loss = checkpoint(test_loader, model, device, args)
             print("Test loss is ", test_loss)
             test_losses.append(test_loss)
             # Write stats file
