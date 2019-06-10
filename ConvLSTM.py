@@ -164,6 +164,6 @@ class ConvLSTM(nn.Module):
         # Hidden states initialized with zeros
         H_0 = torch.zeros(batch_size,hidden_channels,height,width)
         C_0 = torch.zeros(batch_size,hidden_channels,height,width)
-        H_0.to(self.device)
-        C_0.to(self.device)
+        H_0 = H_0.to(self.device)
+        C_0 = C_0.to(self.device)
         return (H_0,C_0)
