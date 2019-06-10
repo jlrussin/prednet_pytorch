@@ -354,7 +354,7 @@ class PredNet(nn.Module):
                 errors.append(E_t) # First time step doesn't count
         # Return errors as tensor
         errors_t = torch.zeros(seq_len,self.nb_layers)
-        for t in range(seq_len):
+        for t in range(seq_len-1):
             for l in range(self.nb_layers):
                 errors_t[t,l] = torch.mean(errors[t][l])
         # Return preds as tensor
