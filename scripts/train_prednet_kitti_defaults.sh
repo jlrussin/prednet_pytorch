@@ -17,4 +17,6 @@ echo "Training PredNet with default hyperparameters on KITTI dataset"
 
 python train.py \
 --out_data_file train_prednet_kitti_defaults.json \
---checkpoint_path ../model_weights/kitti_defaults.pt
+--checkpoint_path ../model_weights/kitti_defaults.pt \
+--checkpoint_every 20 \
+--record_loss_every 500

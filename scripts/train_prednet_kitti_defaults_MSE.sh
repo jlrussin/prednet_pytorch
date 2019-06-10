@@ -19,3 +19,5 @@ python train.py \
 --loss MSE \
 --out_data_file train_prednet_kitti_defaults_mse.json \
 --checkpoint_path ../model_weights/kitti_defaults_mse.pt \
+--checkpoint_every 20 \
+--record_loss_every 500
