@@ -14,6 +14,10 @@ from PredNet import *
 from ConvLSTM import *
 from utils import *
 
+# TODO:
+#   -Fix MSE so that first predicted image is not penalized
+#   -Checkpoint reports both MSE and whatever loss is being used?
+
 parser = argparse.ArgumentParser()
 # Training data
 parser.add_argument('--train_data_hkl',

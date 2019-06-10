@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH -p local
 #SBATCH -A ecortex
-#SBATCH --mem=8G
+#SBATCH --mem=10G
 #SBATCH --time=48:00:00
 #SBATCH --gres=gpu:1
 #SBATCH -c 4
