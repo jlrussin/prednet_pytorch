@@ -44,7 +44,6 @@ python train.py \
 --loss E \
 --learning_rate 0.001 \
 --lr_steps 1 \
---time0_lambda 0.0 \
 --layer_lambdas 1.0 0.0 0.0 \
 --results_dir results \
 --out_data_file small_test_results.json \
