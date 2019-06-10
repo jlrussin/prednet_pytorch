@@ -13,8 +13,9 @@ echo Running on $HOSTNAME
 source /usr/local/anaconda3/etc/profile.d/conda.sh
 conda activate pytorch1.0
 
-echo "Training PredNet with default hyperparameters on KITTI dataset"
+echo "Training PredNet with MSE and default hyperparameters on KITTI dataset"
 
 python train.py \
---out_data_file train_prednet_kitti_defaults.json \
---checkpoint_path ../model_weights/kitti_defaults.pt
+--loss MSE \
+--out_data_file train_prednet_kitti_defaults_mse.json \
+--checkpoint_path ../model_weights/kitti_defaults_mse.pt \
