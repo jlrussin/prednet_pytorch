@@ -158,7 +158,7 @@ class ConvLSTM(nn.Module):
     def initialize(self,X):
         # input dimensions
         batch_size = X.shape[0]
-        out_channels = self.hidden_channels
+        hidden_channels = self.hidden_channels
         height = X.shape[3]
         width = X.shape[4]
         # Hidden states initialized with zeros
