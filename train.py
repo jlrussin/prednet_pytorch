@@ -81,6 +81,8 @@ parser.add_argument('--hidden_channels', type=int, default=192,
                     help='Number of channels in hidden states of ConvLSTM')
 parser.add_argument('--kernel_size', type=int, default=3,
                     help='Kernel size in ConvLSTM')
+parser.add_argument('--out_act', default='relu',
+                    help='Activation for output layer of ConvLSTM cell')
 # Hyperparameters shared by PredNet and ConvLSTM
 parser.add_argument('--in_channels', type=int, default=3,
                     help='Number of channels in input images')
@@ -143,8 +145,8 @@ def main(args):
                         args.LSTM_c_act,args.bias,args.use_1x1_out,args.FC,
                         device)
     elif args.model_type == 'ConvLSTM':
-        model = ConvLSTM(args.in_channels,args.hidden_channels,
-                         args.kernel_size,args.LSTM_act,args.LSTM_c_act,
+        model = ConvLSTM(args.in_channels,args.hidden_channels,args.kernel_size,
+                         args.LSTM_act,args.LSTM_c_act,args.out_act,
                          args.bias,args.FC,device)
 
     if args.load_weights_from is not None:

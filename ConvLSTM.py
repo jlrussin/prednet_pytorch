@@ -20,7 +20,7 @@ class ConvLSTMCell(nn.Module):
     input.
     """
     def __init__(self, in_channels, hidden_channels, kernel_size,
-                 LSTM_act, LSTM_c_act, bias=True, FC=False):
+                 LSTM_act, LSTM_c_act, out_act, bias=True, FC=False):
         super(ConvLSTMCell, self).__init__()
         self.in_channels = in_channels
         self.hidden_channels = hidden_channels
@@ -31,6 +31,7 @@ class ConvLSTMCell(nn.Module):
         # Activations
         self.LSTM_act = get_activation(LSTM_act)
         self.LSTM_c_act = get_activation(LSTM_c_act)
+        self.out_act = get_activation(out_act)
 
         self.stride = 1 # Stride always 1 for simplicity
         self.dilation = 1 # Dilation always 1 for simplicity
@@ -76,7 +77,6 @@ class ConvLSTMCell(nn.Module):
                                  self.groups,self.bias)
         # 1 x 1 convolution for output
         self.out = nn.Conv2d(hidden_channels,in_channels,1,1,0,1,1)
-        self.out_sigmoid = nn.Sigmoid()
 
     def forward(self, X_t, hidden):
         H_tm1, C_tm1 = hidden
@@ -113,26 +113,29 @@ class ConvLSTMCell(nn.Module):
 
         # Output layer
         R_t = self.out(H_t)
-        R_t = self.out_sigmoid(R_t)
+        R_t = self.out_act(R_t)
 
 
         return R_t, (H_t,C_t)
 
 class ConvLSTM(nn.Module):
     def __init__(self, in_channels, hidden_channels, kernel_size,
-                 LSTM_act, LSTM_c_act, bias=True, FC=False, device='cpu'):
+                 LSTM_act, LSTM_c_act, out_act, bias=True, FC=False,
+                 device='cpu'):
         super(ConvLSTM,self).__init__()
         self.in_channels = in_channels
         self.hidden_channels = hidden_channels
         self.kernel_size = kernel_size
         self.LSTM_act = LSTM_act
         self.LSTM_c_act = LSTM_c_act
+        self.out_act = out_act
         self.bias = bias
         self.FC = FC # use fully connected ConvLSTM
         self.device = device
 
         self.cell = ConvLSTMCell(in_channels, hidden_channels, kernel_size,
-                                 LSTM_act, LSTM_c_act, bias=True, FC=False)
+                                 LSTM_act, LSTM_c_act, out_act,
+                                 bias=True, FC=False)
 
     def forward(self,X):
         # Get initial states
