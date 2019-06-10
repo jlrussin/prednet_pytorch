@@ -15,7 +15,7 @@ class ELoss(nn.Module):
 
 def get_loss_fn(loss,layer_lambdas):
     if loss == 'E':
-        loss_fn = E_loss(layer_lambdas)
+        loss_fn = ELoss(layer_lambdas)
     elif loss == 'MSE':
         loss_fn = nn.MSELoss()
     elif loss == 'L1':
