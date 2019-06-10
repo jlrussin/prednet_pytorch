@@ -141,14 +141,14 @@ class ConvLSTM(nn.Module):
         # Loop through image sequence
         preds = []
         seq_len = X.shape[1]
-        for t in range(seq_len):
+        for t in range(seq_len-1): # last image not used for prediction
             X_t = X[:,t,:,:,:] # X dims: (batch,len,channels,height,width)
 
             R_t,(H_t,C_t) = self.cell(X_t,(H_tm1,C_tm1))
 
             # Update
-            (H_tm1,C_tm1) = (H_t,C_t)
             preds.append(R_t.unsqueeze(1))
+            (H_tm1,C_tm1) = (H_t,C_t)
         preds = torch.cat(preds,dim=1)
         return preds
 

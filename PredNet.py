@@ -337,7 +337,7 @@ class PredNet(nn.Module):
                 # Compute Ahat
                 Ahat_layer = self.Ahat_layers[l]
                 Ahat_t = Ahat_layer(R_t[l])
-                if l == 0:
+                if l == 0 and t > 0:
                     preds.append(Ahat_t)
 
                 # Compute E
@@ -350,7 +350,8 @@ class PredNet(nn.Module):
 
             # Update
             (H_tm1,C_tm1),E_tm1 = (H_t,C_t),E_t
-            errors.append(E_t)
+            if t > 0:
+                errors.append(E_t) # First time step doesn't count
         # Return errors as tensor
         errors_t = torch.zeros(seq_len,self.nb_layers)
         for t in range(seq_len):
@@ -358,7 +359,7 @@ class PredNet(nn.Module):
                 errors_t[t,l] = torch.mean(errors[t][l])
         # Return preds as tensor
         preds_t = [pred.unsqueeze(1) for pred in preds]
-        preds_t = torch.cat(preds,dim=1) # (batch,len,in_channels,H,W)
+        preds_t = torch.cat(preds_t,dim=1) # (batch,len,in_channels,H,W)
         return preds_t, errors_t
 
     def initialize(self,X):

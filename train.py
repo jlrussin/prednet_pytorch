@@ -12,11 +12,8 @@ from data import *
 from activations import *
 from PredNet import *
 from ConvLSTM import *
+from custom_losses import *
 from utils import *
-
-# TODO:
-#   -Fix MSE so that first predicted image is not penalized
-#   -Checkpoint reports both MSE and whatever loss is being used?
 
 parser = argparse.ArgumentParser()
 # Training data
@@ -102,13 +99,11 @@ parser.add_argument('--load_weights_from', default=None,
                     help='Path to saved weights')
 
 # Optimization
-parser.add_argument('--loss', default='E',choices=['E','L1','MSE'])
+parser.add_argument('--loss', default='E',choices=['E','twMSE','twL1'])
 parser.add_argument('--learning_rate', type=float, default=0.001,
                     help='Fixed learning rate for Adam optimizer')
 parser.add_argument('--lr_steps', type=int, default=1,
                     help='num times to decrease learning rate by factor of 0.1')
-parser.add_argument('--time0_lambda', type=float, default=0.0,
-                    help='Weight of loss on first time step')
 parser.add_argument('--layer_lambdas', type=float,
                     nargs='+', default=[1.0,0.0,0.0,0.0],
                     help='Weight of loss on error of each layer' +
@@ -156,30 +151,8 @@ def main(args):
         model.load_state_dict(torch.load(args.load_weights_from))
     model.to(device)
 
-    # Custom error loss function for PredNet
-    class ELoss(nn.Module):
-        def __init__(self,time_lambdas,layer_lambdas):
-            super(ELoss,self).__init__()
-            seq_len = len(time_lambdas)
-            nb_layers = len(layer_lambdas)
-            time_lambdas = torch.tensor(time_lambdas)
-            layer_lambdas = torch.tensor(layer_lambdas)
-            self.time_lambdas = time_lambdas.view(seq_len,1)
-            self.layer_lambdas = layer_lambdas.view(1,nb_layers)
-        def forward(self,errors):
-            weighted_errors = self.time_lambdas*errors*self.layer_lambdas
-            total_error = torch.sum(weighted_errors)
-            return total_error
-
     # Select loss function
-    if args.loss == 'E':
-        seq_len = train_data[0].shape[0]
-        time_lambdas = [args.time0_lambda] + [1.0]*(seq_len-1)
-        loss_fn = ELoss(time_lambdas,args.layer_lambdas)
-    elif args.loss == 'L1':
-        loss_fn = nn.L1Loss()
-    elif args.loss == 'MSE':
-        loss_fn = nn.MSELoss()
+    loss_fn = get_loss_fn(args.loss,args.layer_lambdas)
     loss_fn = loss_fn.to(device)
 
     # Optimizer
@@ -212,7 +185,8 @@ def main(args):
             if args.loss == 'E':
                 loss = loss_fn(errors)
             else:
-                loss = loss_fn(preds,X)
+                X_no_t0 = X[:,1:,:,:,:]
+                loss = loss_fn(preds,X_no_t0)
             # Backward pass
             loss.backward()
             optimizer.step()
@@ -248,9 +222,9 @@ def main(args):
             if not os.path.isdir(results_path):
                 os.mkdir(results_path)
             stats = {'loss_data':loss_data,
-                     'train_losses':train_losses,
-                     'val_losses':val_losses,
-                     'test_losses':test_losses}
+                     'train_mse_losses':train_losses,
+                     'val_mse_losses':val_losses,
+                     'test_mse_losses':test_losses}
             results_file_name = '%s/%s' % (results_path,args.out_data_file)
             with open(results_file_name, 'w') as f:
                 json.dump(stats, f)
@@ -262,7 +236,9 @@ def main(args):
                                args.checkpoint_path)
 
 
-def checkpoint(dataloader, model, loss_fn, device, args):
+def checkpoint(dataloader, model, device, args):
+    # Always use MSE loss for checkpointing:
+    mse_loss = nn.MSELoss()
     model.eval()
     with torch.no_grad():
         losses = []
@@ -274,10 +250,8 @@ def checkpoint(dataloader, model, loss_fn, device, args):
             else:
                 preds = model(X)
             # Compute loss
-            if args.loss == 'E':
-                loss = loss_fn(errors)
-            else:
-                loss = loss_fn(preds,X)
+            X_no_t0 = X[:,1:,:,:,:]
+            loss = loss_fn(preds,X_no_t0)
             # Record loss
             loss_datapoint = loss.data.item()
             losses.append(loss_datapoint)
