@@ -152,6 +152,7 @@ def main(args):
     if args.load_weights_from is not None:
         model.load_state_dict(torch.load(args.load_weights_from))
     model.to(device)
+    model.train()
 
     # Select loss function
     loss_fn = get_loss_fn(args.loss,args.layer_lambdas)
