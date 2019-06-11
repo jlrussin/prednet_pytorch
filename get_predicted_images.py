@@ -122,7 +122,7 @@ def main(args):
 
     dir = args.results_dir
     if not os.path.isdir(dir):
-        os.mkdir(results_path)
+        os.mkdir(dir)
 
     # Get predicted images
     model.eval()

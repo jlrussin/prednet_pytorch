@@ -12,6 +12,7 @@ echo Running on $HOSTNAME
 source /usr/local/anaconda3/etc/profile.d/conda.sh
 conda activate pytorch1.0
 
-echo "Training PredNet with default hyperparameters on KITTI dataset"
+echo "Running prednet trained on kitti with defaults to get predicted images"
 
-python get_predicted_images.py
+python get_predicted_images.py \
+--load_weights_from ../model_weights/kitti_defaults.pt
