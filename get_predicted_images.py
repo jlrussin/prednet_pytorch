@@ -136,6 +136,7 @@ def main(args):
                 preds = model(X)
             preds = preds.squeeze(0).permute(0,2,3,1) # (len,H,W,channels)
             preds = preds.cpu().numpy()
+            seq_len = preds.shape[1]
             for t in range(seq_len):
                 preds_t = np.uint8(preds[t])
                 img = Image.fromarray(preds_t)
