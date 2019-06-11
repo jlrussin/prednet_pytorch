@@ -142,6 +142,7 @@ def main(args):
                 img = Image.fromarray(preds_t)
                 fn = args.out_data_file
                 img_path = '%s/%s_seq%d_t%d.png' % (dir,fn,i,t)
+                print("Saving image at %s" % img_path)
                 img.save(img_path)
 
 if __name__ == '__main__':
