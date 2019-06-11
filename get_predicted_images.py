@@ -85,7 +85,7 @@ parser.add_argument('--load_weights_from', default=None,
                     help='Path to saved weights')
 
 # Output options
-parser.add_argument('--results_dir', default='results/images/defaults',
+parser.add_argument('--results_dir', default='../results/images/defaults',
                     help='Results subdirectory to save results')
 parser.add_argument('--out_data_file', default='prednet_defaults',
                     help='Name of output png files')
@@ -130,20 +130,29 @@ def main(args):
         for i in seq_ids:
             X = test_data[i].to(device)
             X = X.unsqueeze(0) # Add batch dim
+            seq_len = X.shape[1]
             if args.model_type == 'PredNet':
                 preds,errors = model(X)
             else:
                 preds = model(X)
             preds = preds.squeeze(0).permute(0,2,3,1) # (len,H,W,channels)
             preds = preds.cpu().numpy()
-            seq_len = preds.shape[0]
+            X = X.squeeze(0).permute(0,2,3,1) # (len,H,W,channels)
+            X = X.cpu().numpy()
             for t in range(seq_len):
-                preds_t = np.uint8(preds[t])
-                img = Image.fromarray(preds_t)
+                X_t = np.uint8(X[t])
+                X_img = Image.fromarray(X_t)
                 fn = args.out_data_file
-                img_path = '%s/%s_seq%d_t%d.png' % (dir,fn,i,t)
+                X_img_path = '%s/%s_X%d_t%d.png' % (dir,fn,i,t)
                 print("Saving image at %s" % img_path)
-                img.save(img_path)
+                img.save(pred_img_path)
+                if t < seq_len - 1: # 1 less prediction
+                    preds_t = np.uint8(preds[t])
+                    img = Image.fromarray(preds_t)
+                    pred_img_path = '%s/%s_pred%d_t%d.png' % (dir,fn,i,t+1)
+                    print("Saving image at %s" % img_path)
+                    img.save(pred_img_path)
+        print("Done")
 
 if __name__ == '__main__':
     args = parser.parse_args()

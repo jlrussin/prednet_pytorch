@@ -112,7 +112,7 @@ parser.add_argument('--layer_lambdas', type=float,
                          'Length should be equal to number of layers')
 
 # Output options
-parser.add_argument('--results_dir', default='results',
+parser.add_argument('--results_dir', default='../results',
                     help='Results subdirectory to save results')
 parser.add_argument('--out_data_file', default='results.json',
                     help='Name of output data file with training loss data')
