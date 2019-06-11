@@ -135,7 +135,7 @@ def main(args):
             else:
                 preds = model(X)
             preds = preds.squeeze(0).permute(0,2,3,1) # (len,H,W,channels)
-            preds = preds.numpy()
+            preds = preds.cpu().numpy()
             for t in range(seq_len):
                 preds_t = np.uint8(preds[t])
                 img = Image.fromarray(preds_t)
