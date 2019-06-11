@@ -144,13 +144,13 @@ def main(args):
                 X_img = Image.fromarray(X_t)
                 fn = args.out_data_file
                 X_img_path = '%s/%s_X%d_t%d.png' % (dir,fn,i,t)
-                print("Saving image at %s" % img_path)
-                img.save(pred_img_path)
+                print("Saving image at %s" % X_img_path)
+                img.save(X_img_path)
                 if t < seq_len - 1: # 1 less prediction
                     preds_t = np.uint8(preds[t])
                     img = Image.fromarray(preds_t)
                     pred_img_path = '%s/%s_pred%d_t%d.png' % (dir,fn,i,t+1)
-                    print("Saving image at %s" % img_path)
+                    print("Saving image at %s" % pred_img_path)
                     img.save(pred_img_path)
         print("Done")
 
