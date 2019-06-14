@@ -2,7 +2,7 @@
 #SBATCH --qos=blanca-ccn
 #SBATCH --mem=32G
 #SBATCH --time=72:00:00
-#SBATCH -c 12
+#SBATCH -c 16
 
 ml git
 
@@ -27,4 +27,4 @@ python train.py \
 --out_data_file prednet_kitti_sigmoid_tanh_fc_mse.json \
 --checkpoint_path ../model_weights/prednet_kitti_sigmoid_tanh_fc_mse.pt \
 --checkpoint_every 20 \
---record_loss_every 500 \
+--record_loss_every 100 \
