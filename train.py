@@ -221,14 +221,13 @@ def main(args):
             print("Test loss is ", test_loss)
             test_losses.append(test_loss)
             # Write stats file
-            results_path = 'results/%s' % (args.results_dir)
-            if not os.path.isdir(results_path):
-                os.mkdir(results_path)
+            if not os.path.isdir(args.results_dir):
+                os.mkdir(args.results_dir)
             stats = {'loss_data':loss_data,
                      'train_mse_losses':train_losses,
                      'val_mse_losses':val_losses,
                      'test_mse_losses':test_losses}
-            results_file_name = '%s/%s' % (results_path,args.out_data_file)
+            results_file_name = '%s/%s' % (args.results_dir,args.out_data_file)
             with open(results_file_name, 'w') as f:
                 json.dump(stats, f)
             # Save model weights
