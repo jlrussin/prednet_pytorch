@@ -11,7 +11,7 @@ echo Running on $HOSTNAME
 ml git
 
 source /pl/active/ccnlab/conda/etc/profile.d/conda.sh
-conda activate pytorch1.0
+conda activate pytorch_source
 
 echo "Training PredNet on KITTI dataset"
 echo "MSE loss"
