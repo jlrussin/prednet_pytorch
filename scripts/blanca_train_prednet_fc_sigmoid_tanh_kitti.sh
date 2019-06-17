@@ -4,6 +4,10 @@
 #SBATCH --time=72:00:00
 #SBATCH -c 16
 
+export HOME=`getent passwd $USER | cut -d':' -f6`
+export PYTHONUNBUFFERED=1
+echo Running on $HOSTNAME
+
 ml git
 
 source /pl/active/ccnlab/conda/etc/profile.d/conda.sh
@@ -27,4 +31,4 @@ python train.py \
 --out_data_file prednet_kitti_sigmoid_tanh_fc_mse.json \
 --checkpoint_path ../model_weights/prednet_kitti_sigmoid_tanh_fc_mse.pt \
 --checkpoint_every 20 \
---record_loss_every 100 \
+--record_loss_every 100
