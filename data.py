@@ -3,10 +3,11 @@ import torch
 from torch.utils.data import Dataset
 
 class KITTI(Dataset):
-    def __init__(self,X_hkl,sources_hkl,seq_len):
+    def __init__(self,X_hkl,sources_hkl,seq_len,norm=True):
         self.X_hkl = X_hkl
         self.sources_hkl = sources_hkl
         self.seq_len = seq_len
+        self.norm = norm # normalize pixel values to [0,1]
         # Load source data
         print("Loading sources data from ", sources_hkl)
         self.sources = hkl.load(sources_hkl)
@@ -22,8 +23,11 @@ class KITTI(Dataset):
             end_loc = cur_loc + seq_len - 1
             end_source = self.sources[end_loc]
             if cur_source == end_source:
-                img_tensor = torch.tensor(X[cur_loc:end_loc+1],dtype=torch.float)
+                img_tensor = torch.tensor(X[cur_loc:end_loc+1],
+                                         dtype=torch.float)
                 img_tensor = img_tensor.unsqueeze(0)
+                if self.norm:
+                    img_tensor = img_tensor / 255.
                 img_seqs.append(img_tensor)
                 cur_loc += seq_len
             else:
