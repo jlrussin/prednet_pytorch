@@ -31,4 +31,4 @@ python train.py \
 --out_data_file prednet_kitti_sigmoid_tanh_fc_mse.json \
 --checkpoint_path ../model_weights/prednet_kitti_sigmoid_tanh_fc_mse.pt \
 --checkpoint_every 20 \
---record_loss_every 100 \
+--record_loss_every 500 \
