@@ -13,23 +13,22 @@ echo Running on $HOSTNAME
 source /usr/local/anaconda3/etc/profile.d/conda.sh
 conda activate pytorch1.0
 
-echo "Training ConvLSTM with MSE on KITTI dataset"
+echo "Training PredNet on KITTI dataset"
+echo "MSE loss"
+echo "LSTM activation: sigmoid"
+echo "LSTM inner activation: tanh"
+echo "Fully connected: True"
 
 python train.py \
---model_type ConvLSTM \
---hidden_channels 256 \
---kernel_size 3 \
---in_channels 3 \
+--model_type PredNet \
 --LSTM_act sigmoid \
 --LSTM_c_act tanh \
 --out_act relu \
 --bias True \
 --FC True \
 --loss MSE \
---learning_rate 0.001 \
---lr_steps 1 \
---results_dir results \
---out_data_file convlstm_kitti_256h_mse.json \
---checkpoint_path ../model_weights/convlstm_kitti_256h_mse.pt \
+--results_dir ../results/train_results \
+--out_data_file prednet_kitti_sigmoid_tanh_fc_mse.json \
+--checkpoint_path ../model_weights/prednet_kitti_sigmoid_tanh_fc_mse.pt \
 --checkpoint_every 20 \
 --record_loss_every 500 \

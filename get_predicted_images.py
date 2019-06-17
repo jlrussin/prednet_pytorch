@@ -139,6 +139,9 @@ def main(args):
             preds = preds.cpu().numpy()
             X = X.squeeze(0).permute(0,2,3,1) # (len,H,W,channels)
             X = X.cpu().numpy()
+            if test_data.norm:
+                X = np.round(X * 255.)
+                preds = np.round(preds * 255.)
             for t in range(seq_len):
                 X_t = np.uint8(X[t])
                 X_img = Image.fromarray(X_t)

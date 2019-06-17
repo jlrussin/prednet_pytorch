@@ -13,9 +13,13 @@ echo Running on $HOSTNAME
 source /usr/local/anaconda3/etc/profile.d/conda.sh
 conda activate pytorch1.0
 
-echo "Running default prednet trained on kitti with mse to get predicted images"
-
 python get_predicted_images.py \
---load_weights_from ../model_weights/kitti_defaults_mse.pt \
---results_dir ../results/images/defaults_mse \
---out_data_file prednet_defaults_mse
+--model_type PredNet \
+--LSTM_act sigmoid \
+--LSTM_c_act tanh \
+--out_act relu \
+--bias True \
+--FC True \
+--load_weights_from ../model_weights/prednet_kitti_sigmoid_tanh_fc_mse.pt \
+--results_dir ../results/images/sigmoid_tanh_fc_mse \
+--out_data_file prednet_sigmoid_tanh_fc_mse

@@ -11,7 +11,7 @@ echo Running on $HOSTNAME
 ml git
 
 source /pl/active/ccnlab/conda/etc/profile.d/conda.sh
-conda activate pytorch1.0
+conda activate pytorch_source
 
 echo "Training PredNet on KITTI dataset"
 echo "MSE loss"
@@ -31,4 +31,4 @@ python train.py \
 --out_data_file prednet_kitti_sigmoid_tanh_fc_mse.json \
 --checkpoint_path ../model_weights/prednet_kitti_sigmoid_tanh_fc_mse.pt \
 --checkpoint_every 20 \
---record_loss_every 1
+--record_loss_every 100

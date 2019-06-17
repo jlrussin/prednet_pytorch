@@ -68,7 +68,7 @@ parser.add_argument('--use_satlu', type=str2bool, default=True,
 parser.add_argument('--satlu_act', default='hardtanh',
                     choices=['hardtanh','logsigmoid'],
                     help='Type of activation to use for SatLU in Ahat.')
-parser.add_argument('--pixel_max', type=float, default=255.0,
+parser.add_argument('--pixel_max', type=float, default=1.0,
                     help='Maximum output value for Ahat if using SatLU.')
 parser.add_argument('--error_act', default='relu',
                     choices=['relu','sigmoid','tanh','hardsigmoid'],
@@ -221,14 +221,13 @@ def main(args):
             print("Test loss is ", test_loss)
             test_losses.append(test_loss)
             # Write stats file
-            results_path = 'results/%s' % (args.results_dir)
-            if not os.path.isdir(results_path):
-                os.mkdir(results_path)
+            if not os.path.isdir(args.results_dir):
+                os.mkdir(args.results_dir)
             stats = {'loss_data':loss_data,
                      'train_mse_losses':train_losses,
                      'val_mse_losses':val_losses,
                      'test_mse_losses':test_losses}
-            results_file_name = '%s/%s' % (results_path,args.out_data_file)
+            results_file_name = '%s/%s' % (args.results_dir,args.out_data_file)
             with open(results_file_name, 'w') as f:
                 json.dump(stats, f)
             # Save model weights
