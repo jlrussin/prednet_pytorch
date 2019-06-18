@@ -265,4 +265,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print(args)
     print("MKL is available: ", torch.backends.mkl.is_available())
+    print("MKL DNN is available: ", torch.backends.mkldnn.is_available())
     main(args)
