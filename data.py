@@ -13,31 +13,32 @@ class KITTI(Dataset):
         self.sources = hkl.load(sources_hkl)
         # Load image data
         print("Loading image data from ", X_hkl)
-        X = hkl.load(X_hkl) #(n_images,height,width,in_channels)
-        n_images = X.shape[0]
+        self.X = hkl.load(X_hkl) #(n_images,height,width,in_channels)
+        n_images = self.X.shape[0]
         print("Loaded %d images" % n_images)
-        img_seqs = [] # list of tensors
+
+        # Get starting and ending indices
+        self.start_end_idxs = [] # list of (start_loc,end_loc) tuples
         cur_loc = 0
         while cur_loc < n_images - seq_len + 1:
             cur_source = self.sources[cur_loc]
             end_loc = cur_loc + seq_len - 1
             end_source = self.sources[end_loc]
             if cur_source == end_source:
-                img_tensor = torch.tensor(X[cur_loc:end_loc+1],
-                                         dtype=torch.float)
-                img_tensor = img_tensor.unsqueeze(0)
-                if self.norm:
-                    img_tensor = img_tensor / 255.
-                img_seqs.append(img_tensor)
+                self.start_end_idxs.append((cur_loc,end_loc))
                 cur_loc += seq_len
             else:
                 cur_loc += 1
-        self.X = torch.cat(img_seqs,dim=0) # (batch,len,height,width,channels)
-        self.X = self.X.permute(0,1,4,2,3) # (batch,len,channels,height,width)
         print("Dataset contains %d sequences" % self.X.shape[0])
 
     def __getitem__(self,index):
-        return self.X[index]
+        start,end = self.start_end_idxs[index]
+        img_seq = self.X[start:end+1]
+        img_tensor = torch.tensor(img_seq,dtype=torch.float)
+        img_tensor = img_tensor.permute(0,3,1,2) # (len,channels,height,width)
+        if self.norm:
+            img_tensor = img_tensor / 255.
+        return img_tensor
 
     def __len__(self):
         return self.X.shape[0]

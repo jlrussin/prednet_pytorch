@@ -28,7 +28,7 @@ python train.py \
 --loss MSE \
 --learning_rate 0.001 \
 --lr_steps 1 \
---results_dir results \
+--results_dir ../results/train_results \
 --out_data_file convlstm_kitti_256h_mse.json \
 --checkpoint_path ../model_weights/convlstm_kitti_256h_mse.pt \
 --checkpoint_every 20 \
