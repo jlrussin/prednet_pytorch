@@ -41,4 +41,4 @@ class KITTI(Dataset):
         return img_tensor
 
     def __len__(self):
-        return self.X.shape[0]
+        return len(self.start_end_idxs)
