@@ -112,7 +112,7 @@ parser.add_argument('--layer_lambdas', type=float,
                          'Length should be equal to number of layers')
 
 # Output options
-parser.add_argument('--results_dir', default='../results',
+parser.add_argument('--results_dir', default='../results/train_results',
                     help='Results subdirectory to save results')
 parser.add_argument('--out_data_file', default='results.json',
                     help='Name of output data file with training loss data')
@@ -265,5 +265,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print(args)
     print("MKL is available: ", torch.backends.mkl.is_available())
-    print("MKL DNN is available: ", torch.backends.mkldnn.is_available())
+    print("MKL DNN is available: ", torch._C.has_mkldnn)
     main(args)
