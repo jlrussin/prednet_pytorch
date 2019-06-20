@@ -1,4 +1,5 @@
 import os
+import time
 import argparse
 import json
 import numpy as np
@@ -179,6 +180,7 @@ def main(args):
             iter += 1
             optimizer.zero_grad()
             # Forward
+            start_t = time.time()
             X = X.to(device)
             if args.model_type == 'PredNet':
                 preds,errors = model(X)
@@ -200,7 +202,8 @@ def main(args):
                 print('Epoch:', epoch_count,
                       'Iter:', iter,
                       'Loss:', loss_datapoint,
-                      'lr:', scheduler.get_lr())
+                      'lr:', scheduler.get_lr(),
+                      'time: ', time.time() - start_t)
                 loss_data.append(loss_datapoint)
         # Checkpoint
         last_epoch = (iter >= args.num_iters)
