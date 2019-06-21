@@ -14,6 +14,8 @@ ml git
 source /pl/active/ccnlab/conda/etc/profile.d/conda.sh
 conda activate pytorch_source
 
+export MKL_NUM_THREADS=2 OMP_NUM_THREADS=2 
+
 echo "MKL_NUM_THREADS: "
 echo $MKL_NUM_THREADS
 echo "OMP_NUM_THREADS: "
