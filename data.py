@@ -1,7 +1,9 @@
+import os
 import hickle as hkl
 import torch
 from torch.utils.data import Dataset
 from PIL import Image
+
 
 
 class KITTI(Dataset):
