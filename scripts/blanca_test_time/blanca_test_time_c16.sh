@@ -22,7 +22,7 @@ echo "OMP_NUM_THREADS: "
 echo $OMP_NUM_THREADS
 
 python train.py \
---num_iters 100 \
+--num_iters 20 \
 --lr_steps 0 \
 --out_data_file time_test.json \
 --record_loss_every 1
