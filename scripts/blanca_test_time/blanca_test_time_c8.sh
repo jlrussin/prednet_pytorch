@@ -14,6 +14,11 @@ ml git
 source /pl/active/ccnlab/conda/etc/profile.d/conda.sh
 conda activate pytorch_source
 
+echo "MKL_NUM_THREADS: "
+echo $MKL_NUM_THREADS
+echo "OMP_NUM_THREADS: "
+echo $OMP_NUM_THREADS
+
 python train.py \
 --num_iters 100 \
 --lr_steps 0 \
