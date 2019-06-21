@@ -87,8 +87,8 @@ def ccn_dir_to_hkl(directory,seq_len,val_p,test_p):
     """
     This function assumes:
         -Sorted listdir will be in order
-        -Category labels are in split[4]
-        -Tick numbers are in split[7]
+        -Category labels are in split[4], except car/motorcycle in 4/5
+        -Tick numbers are in split[7], except car/motorcycle in 8
     """
     print("Loading images from %s" % directory)
     img_seqs = [] # list of lists of images
@@ -98,8 +98,12 @@ def ccn_dir_to_hkl(directory,seq_len,val_p,test_p):
     for fn in sorted(os.listdir(directory)):
         # Get category label and tick number
         split = fn.split('_')
-        label = split[4]
-        t = int(split[7])
+        if split[4] in ['car','motorcycle']:
+            label = split[4] + '_' + split[5]
+            t = int(split[8])
+        else:
+            label = split[4]
+            t = int(split[7])
         # Get image
         img = Image.open(directory + fn)
         arr = np.array(img)
@@ -150,3 +154,4 @@ def ccn_dir_to_hkl(directory,seq_len,val_p,test_p):
     hkl.dump(test_seqs,'X_test.hkl')
     print("Writing test labels to labels_test.hkl")
     hkl.dump(test_labels,'labels_test.hkl')
+    
