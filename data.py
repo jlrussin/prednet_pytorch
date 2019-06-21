@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import hickle as hkl
 import torch
 from torch.utils.data import Dataset
