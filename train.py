@@ -205,6 +205,8 @@ def main(args):
                       'lr:', scheduler.get_lr(),
                       'time: ', time.time() - start_t)
                 loss_data.append(loss_datapoint)
+            if iter >= args.num_iters:
+                break
         # Checkpoint
         last_epoch = (iter >= args.num_iters)
         if epoch_count % args.checkpoint_every == 0 or last_epoch:
