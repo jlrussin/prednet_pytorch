@@ -94,6 +94,7 @@ def ccn_dir_to_hkl(directory,seq_len,val_p,test_p):
     img_seqs = [] # list of lists of images
     img_seq = [] # list of images in one seq
     labels = [] # list of category labels for each seq
+    i = 0
     # Loop through files to get images and labels
     for fn in sorted(os.listdir(directory)):
         # Get category label and tick number
@@ -112,6 +113,9 @@ def ccn_dir_to_hkl(directory,seq_len,val_p,test_p):
             labels.append(label)
             img_seqs.append(img_seq)
             img_seq = []
+        i += 1
+        if i % 1000 == 0:
+            print("Starting image %d" % i)
 
     # Split data: train, val, test
     print("Splitting into train, val, test")
@@ -154,4 +158,3 @@ def ccn_dir_to_hkl(directory,seq_len,val_p,test_p):
     hkl.dump(test_seqs,'X_test.hkl')
     print("Writing test labels to labels_test.hkl")
     hkl.dump(test_labels,'labels_test.hkl')
-    
