@@ -17,5 +17,6 @@ echo "Training PredNet with default hyperparameters on KITTI dataset"
 
 python train.py \
 --num_iters 100 \
+--lr_steps 0 \
 --out_data_file time_test.json \
 --record_loss_every 1
