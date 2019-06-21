@@ -18,6 +18,8 @@ from utils import *
 
 parser = argparse.ArgumentParser()
 # Training data
+parser.add_argument('--dataset',choices=['KITTI','CCN'],default='KITTI',
+                    help='Dataset to use')
 parser.add_argument('--train_data_hkl',
                     default='../data/kitti_data/X_train.hkl',
                     help='Path to training images hkl file')
@@ -130,9 +132,20 @@ def main(args):
     device = torch.device("cuda:0" if use_cuda else "cpu")
 
     # Data
-    train_data = KITTI(args.train_data_hkl,args.train_sources_hkl,args.seq_len)
-    val_data = KITTI(args.val_data_hkl,args.val_sources_hkl,args.seq_len)
-    test_data = KITTI(args.test_data_hkl,args.test_sources_hkl,args.seq_len)
+    if args.dataset == 'KITTI':
+        train_data = KITTI(args.train_data_hkl,args.train_sources_hkl,
+                           args.seq_len)
+        val_data = KITTI(args.val_data_hkl,args.val_sources_hkl,
+                         args.seq_len)
+        test_data = KITTI(args.test_data_hkl,args.test_sources_hkl,
+                          args.seq_len)
+    elif args.dataset == 'CCN':
+        train_data = CCN(args.train_data_hkl,args.train_sources_hkl,
+                         args.seq_len)
+        val_data = CCN(args.val_data_hkl,args.val_sources_hkl,
+                         args.seq_len)
+        test_data = CCN(args.test_data_hkl,args.test_sources_hkl,
+                         args.seq_len)
     train_loader = DataLoader(train_data,args.batch_size,shuffle=True)
     val_loader = DataLoader(val_data,args.batch_size,shuffle=True)
     test_loader = DataLoader(test_data,args.batch_size,shuffle=True)
