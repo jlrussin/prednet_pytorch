@@ -1,6 +1,8 @@
 import hickle as hkl
 import torch
 from torch.utils.data import Dataset
+from PIL import Image
+
 
 class KITTI(Dataset):
     def __init__(self,X_hkl,sources_hkl,seq_len,norm=True):
@@ -145,4 +147,3 @@ def ccn_dir_to_hkl(directory,seq_len,val_p,test_p):
     hkl.dump(test_seqs,'X_test.hkl')
     print("Writing test labels to labels_test.hkl")
     hkl.dump(test_labels,'labels_test.hkl')
-    
