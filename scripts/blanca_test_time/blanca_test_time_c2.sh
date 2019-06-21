@@ -22,6 +22,13 @@ echo "OMP_NUM_THREADS: "
 echo $OMP_NUM_THREADS
 
 python train.py \
+--train_data_hkl ../data/kitti_data/X_val.hkl \
+--train_sources_hkl ../data/kitti_data/sources_val.hkl \
+--val_data_hkl ../data/kitti_data/X_val.hkl \
+--val_sources_hkl ../data/kitti_data/sources_val.hkl \
+--test_data_hkl ../data/kitti_data/X_val.hkl \
+--test_sources_hkl ../data/kitti_data/sources_val.hkl \
+--batch_size 1 \
 --num_iters 20 \
 --lr_steps 0 \
 --out_data_file time_test.json \
