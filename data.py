@@ -56,6 +56,7 @@ class CCN(Dataset):
         self.labels = []
         self.fn_seqs = []
         fn_seq = []
+        print("Loading files from %s" % img_dir)
         for fn in sorted(os.listdir(img_dir)):
             fn_seq.append(fn)
             split = fn.split('_')
@@ -69,6 +70,7 @@ class CCN(Dataset):
                 self.fn_seqs.append(fn_seq)
                 self.labels.append(label)
                 fn_seq = []
+        print("Dataset has %d sequences" % len(self.fn_seqs))
 
     def __getitem__(self,index):
         fn_seq = self.fn_seqs[index]
