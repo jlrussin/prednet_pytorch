@@ -120,8 +120,6 @@ parser.add_argument('--out_data_file', default='results.json',
                     help='Name of output data file with training loss data')
 parser.add_argument('--checkpoint_path',default=None,
                     help='Path to output saved weights.')
-parser.add_argument('--checkpoint_every', type=int, default=5,
-                    help='Epochs before evaluating model and saving weights')
 parser.add_argument('--record_loss_every', type=int, default=20,
                     help='iters before printing and recording loss')
 

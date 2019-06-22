@@ -8,8 +8,6 @@ export HOME=`getent passwd $USER | cut -d':' -f6`
 export PYTHONUNBUFFERED=1
 echo Running on $HOSTNAME
 
-ml git
-
 source /pl/active/ccnlab/conda/etc/profile.d/conda.sh
 conda activate pytorch_source
 

@@ -31,7 +31,7 @@ def train(rank, args, model, device, dataloader_kwargs):
     # Stats
     if not os.path.isdir(args.results_dir):
         os.mkdir(args.results_dir)
-    results_fn = args.out_data_file + rank
+    results_fn = 'r%d_' % rank + args.out_data_file
     results_path = os.path.join(args.results_dir,results_fn)
     loss_data = [] # records loss every args.record_loss_every iters
 
