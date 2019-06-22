@@ -139,8 +139,11 @@ def split_ccn(img_dir,seq_len,val_p,test_p):
     # Move images into train, val, test
     print("Moving images to train, val, test directories")
     for i,fn_seq in enumerate(fn_seqs):
+        if i % 1000 == 0:
+            print("starting sequence %d" % i)
         for fn in fn_seq:
             new_dir = partition[i]
             old_path = img_dir+fn
             new_path = img_dir+new_dir+fn
             os.rename(old_path,new_path)
+    print("Done!")

@@ -20,22 +20,22 @@ parser = argparse.ArgumentParser()
 # Training data
 parser.add_argument('--dataset',choices=['KITTI','CCN'],default='KITTI',
                     help='Dataset to use')
-parser.add_argument('--train_data_hkl',
+parser.add_argument('--train_data_path',
                     default='../data/kitti_data/X_train.hkl',
                     help='Path to training images hkl file')
-parser.add_argument('--train_sources_hkl',
+parser.add_argument('--train_sources_path',
                     default='../data/kitti_data/sources_train.hkl',
                     help='Path to training sources hkl file')
-parser.add_argument('--val_data_hkl',
+parser.add_argument('--val_data_path',
                     default='../data/kitti_data/X_val.hkl',
                     help='Path to validation images hkl file')
-parser.add_argument('--val_sources_hkl',
+parser.add_argument('--val_sources_path',
                     default='../data/kitti_data/sources_val.hkl',
                     help='Path to validation sources hkl file')
-parser.add_argument('--test_data_hkl',
+parser.add_argument('--test_data_path',
                     default='../data/kitti_data/X_test.hkl',
                     help='Path to test images hkl file')
-parser.add_argument('--test_sources_hkl',
+parser.add_argument('--test_sources_path',
                     default='../data/kitti_data/sources_test.hkl',
                     help='Path to test sources hkl file')
 parser.add_argument('--seq_len',type=int,default=10,
@@ -133,19 +133,16 @@ def main(args):
 
     # Data
     if args.dataset == 'KITTI':
-        train_data = KITTI(args.train_data_hkl,args.train_sources_hkl,
+        train_data = KITTI(args.train_data_path,args.train_sources_path,
                            args.seq_len)
-        val_data = KITTI(args.val_data_hkl,args.val_sources_hkl,
+        val_data = KITTI(args.val_data_path,args.val_sources_path,
                          args.seq_len)
-        test_data = KITTI(args.test_data_hkl,args.test_sources_hkl,
+        test_data = KITTI(args.test_data_path,args.test_sources_path,
                           args.seq_len)
     elif args.dataset == 'CCN':
-        train_data = CCN(args.train_data_hkl,args.train_sources_hkl,
-                         args.seq_len)
-        val_data = CCN(args.val_data_hkl,args.val_sources_hkl,
-                         args.seq_len)
-        test_data = CCN(args.test_data_hkl,args.test_sources_hkl,
-                         args.seq_len)
+        train_data = CCN(args.train_data_path,args.seq_len)
+        val_data = CCN(args.val_data_path,args.seq_len)
+        test_data = CCN(args.test_data_path,args.seq_len)
     train_loader = DataLoader(train_data,args.batch_size,shuffle=True)
     val_loader = DataLoader(val_data,args.batch_size,shuffle=True)
     test_loader = DataLoader(test_data,args.batch_size,shuffle=True)
