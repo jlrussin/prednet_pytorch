@@ -1,21 +1,21 @@
-import os
 import time
 import argparse
-import json
-import numpy as np
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import DataLoader
+import torch.multiprocessing as mp
 
-from data import *
 from PredNet import *
 from ConvLSTM import *
-from custom_losses import *
+from activations import *
 from utils import *
+from mp_train import train, test
 
 parser = argparse.ArgumentParser()
+# Multiprocessing
+parser.add_argument('--num_processes',type=int,default=2,
+                    help='Number of training processes to use.')
+parser.add_argument('--seed',type=int, default=0,
+                    help='Manual seed for torch random number generator')
+
 # Training data
 parser.add_argument('--dataset',choices=['KITTI','CCN'],default='KITTI',
                     help='Dataset to use')
@@ -125,28 +125,22 @@ parser.add_argument('--checkpoint_every', type=int, default=5,
 parser.add_argument('--record_loss_every', type=int, default=20,
                     help='iters before printing and recording loss')
 
-def main(args):
-    # CUDA
+if __name__ == '__main__':
+    start_train_time = time.time()
+
+    args = parser.parse_args()
+    print(args)
+
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda:0" if use_cuda else "cpu")
+    dataloader_kwargs = {'pin_memory': True} if use_cuda else {}
+    print("CUDA is available: ", use_cuda)
+    print("MKL is available: ", torch.backends.mkl.is_available())
+    print("MKL DNN is available: ", torch._C.has_mkldnn)
 
-    # Data
-    if args.dataset == 'KITTI':
-        train_data = KITTI(args.train_data_path,args.train_sources_path,
-                           args.seq_len)
-        val_data = KITTI(args.val_data_path,args.val_sources_path,
-                         args.seq_len)
-        test_data = KITTI(args.test_data_path,args.test_sources_path,
-                          args.seq_len)
-    elif args.dataset == 'CCN':
-        train_data = CCN(args.train_data_path,args.seq_len)
-        val_data = CCN(args.val_data_path,args.seq_len)
-        test_data = CCN(args.test_data_path,args.seq_len)
-    train_loader = DataLoader(train_data,args.batch_size,shuffle=True)
-    val_loader = DataLoader(val_data,args.batch_size,shuffle=True)
-    test_loader = DataLoader(test_data,args.batch_size,shuffle=True)
+    torch.manual_seed(args.seed)
+    mp.set_start_method('spawn')
 
-    # Model
     if args.model_type == 'PredNet':
         model = PredNet(args.in_channels,args.stack_sizes,args.R_stack_sizes,
                         args.A_kernel_sizes,args.Ahat_kernel_sizes,
@@ -162,124 +156,21 @@ def main(args):
     if args.load_weights_from is not None:
         model.load_state_dict(torch.load(args.load_weights_from))
     model.to(device)
-    model.train()
+    model.share_memory() # grads allocated lazily, so they are not shared here
 
-    # Select loss function
-    loss_fn = get_loss_fn(args.loss,args.layer_lambdas)
-    loss_fn = loss_fn.to(device)
+    processes = []
+    for rank in range(args.num_processes):
+        p = mp.Process(target=train,
+                       args=(rank, args, model, device, dataloader_kwargs))
+        p.start()
+        processes.append(p)
+    for p in processes:
+        p.join()
 
-    # Optimizer
-    params = model.parameters()
-    optimizer = optim.Adam(params, lr=args.learning_rate)
-    lrs_step_size = args.num_iters // (args.lr_steps+1)
-    scheduler = optim.lr_scheduler.StepLR(optimizer,step_size=lrs_step_size,
-                                          gamma=0.1)
+    if args.checkpoint_path is not None:
+        torch.save(model.state_dict(),
+                   args.checkpoint_path)
 
-    # Training loop:
-    iter = 0
-    epoch_count = 0
-    loss_data = [] # records loss every args.record_loss_every iters
-    train_losses = [] # records mean training loss every checkpoint
-    val_losses = [] # records mean validation loss every checkpoint
-    test_losses = [] # records mean test loss every checkpoint
-    best_val_loss = float("inf") # will only save best weights
-    while iter < args.num_iters:
-        epoch_count += 1
-        for X in train_loader:
-            iter += 1
-            optimizer.zero_grad()
-            # Forward
-            start_t = time.time()
-            X = X.to(device)
-            if args.model_type == 'PredNet':
-                preds,errors = model(X)
-            else:
-                preds = model(X)
-            # Compute loss
-            if args.loss == 'E':
-                loss = loss_fn(errors)
-            else:
-                X_no_t0 = X[:,1:,:,:,:]
-                loss = loss_fn(preds,X_no_t0)
-            # Backward pass
-            loss.backward()
-            optimizer.step()
-            scheduler.step()
-            # Record loss
-            if iter % args.record_loss_every == 0:
-                loss_datapoint = loss.data.item()
-                print('Epoch:', epoch_count,
-                      'Iter:', iter,
-                      'Loss:', loss_datapoint,
-                      'lr:', scheduler.get_lr(),
-                      'time: ', time.time() - start_t)
-                loss_data.append(loss_datapoint)
-            if iter >= args.num_iters:
-                break
-        # Checkpoint
-        last_epoch = (iter >= args.num_iters)
-        if epoch_count % args.checkpoint_every == 0 or last_epoch:
-            # Train
-            print("Checking training loss...")
-            train_loss = checkpoint(train_loader, model, device, args)
-            print("Training loss is ", train_loss)
-            train_losses.append(train_loss)
-            # Validation
-            print("Checking validation loss...")
-            val_loss = checkpoint(val_loader, model, device, args)
-            print("Validation loss is ", val_loss)
-            val_losses.append(val_loss)
-            # Test
-            print("Checking test loss...")
-            test_loss = checkpoint(test_loader, model, device, args)
-            print("Test loss is ", test_loss)
-            test_losses.append(test_loss)
-            # Write stats file
-            if not os.path.isdir(args.results_dir):
-                os.mkdir(args.results_dir)
-            stats = {'loss_data':loss_data,
-                     'train_mse_losses':train_losses,
-                     'val_mse_losses':val_losses,
-                     'test_mse_losses':test_losses}
-            results_file_name = '%s/%s' % (args.results_dir,args.out_data_file)
-            with open(results_file_name, 'w') as f:
-                json.dump(stats, f)
-            # Save model weights
-            if val_loss < best_val_loss: # use val (not test) to decide to save
-                best_val_loss = val_loss
-                if args.checkpoint_path is not None:
-                    torch.save(model.state_dict(),
-                               args.checkpoint_path)
+    test(args,model,device,dataloader_kwargs)
 
-
-def checkpoint(dataloader, model, device, args):
-    # Always use MSE loss for checkpointing:
-    mse_loss = nn.MSELoss()
-    model.eval()
-    with torch.no_grad():
-        losses = []
-        for X in dataloader:
-            # Forward
-            X = X.to(device)
-            if args.model_type == 'PredNet':
-                preds,errors = model(X)
-            else:
-                preds = model(X)
-            # Compute loss
-            X_no_t0 = X[:,1:,:,:,:]
-            loss = mse_loss(preds,X_no_t0)
-            # Record loss
-            loss_datapoint = loss.data.item()
-            losses.append(loss_datapoint)
-
-    model.train()
-    return np.mean(losses)
-
-if __name__ == '__main__':
-    args = parser.parse_args()
-    print(args)
-    start_train_time = time.time()
-    print("MKL is available: ", torch.backends.mkl.is_available())
-    print("MKL DNN is available: ", torch._C.has_mkldnn)
-    main(args)
     print("Total training time: ", time.time() - start_train_time)
