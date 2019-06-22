@@ -2,7 +2,7 @@ import os
 import numpy as np
 import hickle as hkl
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset,DataLoader
 from PIL import Image
 
 class KITTI(Dataset):
