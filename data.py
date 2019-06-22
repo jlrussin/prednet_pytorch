@@ -5,8 +5,6 @@ import torch
 from torch.utils.data import Dataset
 from PIL import Image
 
-
-
 class KITTI(Dataset):
     def __init__(self,X_hkl,sources_hkl,seq_len,norm=True):
         self.X_hkl = X_hkl
@@ -49,28 +47,35 @@ class KITTI(Dataset):
         return len(self.start_end_idxs)
 
 class CCN(Dataset):
-    def __init__(self,X_hkl,labels_hkl,seq_len,
-                 norm=True,return_labels=False):
-        self.X_hkl = X_hkl
-        self.labels_hkl = labels_hkl
+    def __init__(self,img_dir,seq_len,norm=True,return_labels=False):
+        self.img_dir = img_dir
         self.seq_len = seq_len
         self.norm = norm # normalize pixel values to [0,1]
         self.return_labels = return_labels # return images, labels
-        # Load label data
-        print("Loading label data from ", labels_hkl)
-        self.labels = hkl.load(labels_hkl)
-        # Load image data
-        print("Loading image data from ", X_hkl)
-        self.X = hkl.load(X_hkl) #(n_seqs,seq_len,height,width,in_channels)
-        self.n_seqs = self.X.shape[0]
-        print("Loaded %d sequences" % self.n_seqs)
-
-        msg = "Number of image sequences does not match number of labels"
-        assert self.X.shape[0] == len(self.labels)
+        # Organize filenames into a list of seqs
+        self.labels = []
+        self.fn_seqs = []
+        fn_seq = []
+        for fn in sorted(os.listdir(img_dir)):
+            fn_seq.append(fn)
+            split = fn.split('_')
+            if split[4] in ['car','motorcycle']:
+                t = int(split[8])
+                label = split[4] + '_' + split[5]
+            else:
+                t = int(split[7])
+                label = split[4]
+            if t == seq_len-1:
+                self.fn_seqs.append(fn_seq)
+                self.labels.append(label)
+                fn_seq = []
 
     def __getitem__(self,index):
-        img_seq = self.X[index]
-        img_tensor = torch.tensor(img_seq,dtype=torch.float)
+        fn_seq = self.fn_seqs[index]
+        path_seq = [os.path.join(self.img_dir,fn) for fn in fn_seq]
+        img_seq = [Image.open(p) for p in path_seq]
+        arr_seq = np.stack(img_seq)
+        img_tensor = torch.tensor(arr_seq,dtype=torch.float)
         img_tensor = img_tensor.permute(0,3,1,2) # (len,channels,height,width)
         if self.norm:
             img_tensor = img_tensor / 255.
@@ -81,80 +86,61 @@ class CCN(Dataset):
             return img_tensor
 
     def __len__(self):
-        return self.n_seqs
+        return len(self.fn_seqs)
 
-def ccn_dir_to_hkl(directory,seq_len,val_p,test_p):
+def split_ccn(img_dir,seq_len,val_p,test_p):
     """
     This function assumes:
         -Sorted listdir will be in order
         -Category labels are in split[4], except car/motorcycle in 4/5
         -Tick numbers are in split[7], except car/motorcycle in 8
     """
-    print("Loading images from %s" % directory)
-    img_seqs = [] # list of lists of images
-    img_seq = [] # list of images in one seq
-    labels = [] # list of category labels for each seq
-    i = 0
-    # Loop through files to get images and labels
-    for fn in sorted(os.listdir(directory)):
-        # Get category label and tick number
+    print("Loading filenmaes from %s" % img_dir)
+    fn_seqs = [] # list of lists of filenmanes
+    fn_seq = [] # current list of filenames
+    for fn in sorted(os.listdir(img_dir)):
+        fn_seq.append(fn)
         split = fn.split('_')
         if split[4] in ['car','motorcycle']:
-            label = split[4] + '_' + split[5]
             t = int(split[8])
         else:
-            label = split[4]
             t = int(split[7])
-        # Get image
-        img = Image.open(directory + fn)
-        arr = np.array(img)
-        img_seq.append(arr)
         if t == seq_len-1:
-            labels.append(label)
-            img_seqs.append(img_seq)
-            img_seq = []
-        i += 1
-        if i % 1000 == 0:
-            print("Starting image %d" % i)
+            fn_seqs.append(fn_seq)
+            fn_seq = []
 
     # Split data: train, val, test
     print("Splitting into train, val, test")
-    n_seqs = len(img_seqs)
-    print("Total number of image sequences: ",n_seqs)
-    img_seqs = np.array(img_seqs)
-    labels = np.array(labels)
+    n_seqs = len(fn_seqs)
+    print("Total number of sequences: ",n_seqs)
 
     n_val = int(n_seqs*val_p)
     n_test = int(n_seqs*test_p)
     n_train = n_seqs - n_val - n_test
 
-    indices = np.random.permutation(n_seqs)
-    train_ids = indices[0:n_train]
-    val_ids = indices[n_train:n_train+n_val]
-    test_ids = indices[n_train+n_val:n_seqs]
-
-    train_seqs = img_seqs[train_ids]
-    val_seqs = img_seqs[val_ids]
-    test_seqs = img_seqs[test_ids]
-
-    train_labels = labels[train_ids].tolist()
-    val_labels = labels[val_ids].tolist()
-    test_labels = labels[test_ids].tolist()
+    train_list = ['train/' for i in range(n_train)]
+    val_list = ['val/' for i in range(n_val)]
+    test_list = ['test/' for i in range(n_test)]
+    all_list = train_list + val_list + test_list
+    partition = np.random.permutation(all_list)
 
     print("Number of train sequences: ",n_train)
     print("Number of val sequences: ",n_val)
     print("Number of test sequences: ",n_test)
 
-    # Dump with hickle
-    print("Writing train images to X_train.hkl")
-    hkl.dump(train_seqs,'X_train.hkl')
-    print("Writing train labels to labels_train.hkl")
-    hkl.dump(train_labels,'labels_train.hkl')
-    print("Writing val images to X_val.hkl")
-    hkl.dump(val_seqs,'X_val.hkl')
-    print("Writing val labels to labels_val.hkl")
-    hkl.dump(val_labels,'labels_val.hkl')
-    print("Writing test images to X_test.hkl")
-    hkl.dump(test_seqs,'X_test.hkl')
-    print("Writing test labels to labels_test.hkl")
-    hkl.dump(test_labels,'labels_test.hkl')
+    # Make train, val, test directories
+    if not os.path.isdir(img_dir + 'train'):
+        os.mkdir(img_dir + 'train')
+    if not os.path.isdir(img_dir + 'val'):
+        os.mkdir(img_dir + 'val')
+    if not os.path.isdir(img_dir + 'test'):
+        os.mkdir(img_dir + 'test')
+
+    # Move images into train, val, test
+    print("Moving images to train, val, test directories")
+    for i,fn_seq in enumerate(fn_seqs):
+        for fn in fn_seq:
+            new_dir = partition[i]
+            old_path = img_dir+fn
+            new_path = img_dir+new_dir+fn
+            os.rename(old_path,new_path)
