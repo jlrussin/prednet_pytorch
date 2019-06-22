@@ -32,7 +32,7 @@ class KITTI(Dataset):
                 cur_loc += seq_len
             else:
                 cur_loc += 1
-        print("Dataset contains %d sequences" % len(self.start_end_idxs)
+        print("Dataset contains %d sequences" % len(self.start_end_idxs))
 
     def __getitem__(self,index):
         start,end = self.start_end_idxs[index]
