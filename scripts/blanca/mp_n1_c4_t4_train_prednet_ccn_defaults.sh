@@ -30,4 +30,4 @@ python main.py \
 --num_iters 100 \
 --out_data_file train_prednet_ccn_defaults_mp.json \
 --checkpoint_path ../model_weights/ccn_defaults_mp.pt \
---record_loss_every 20
+--record_loss_every 1
