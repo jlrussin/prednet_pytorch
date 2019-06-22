@@ -20,6 +20,7 @@ python train.py \
 --train_data_path /pl/active/ccnlab/ccn_images/wwi_emer_imgs_20fg_8tick_rot1/train/ \
 --val_data_path /pl/active/ccnlab/ccn_images/wwi_emer_imgs_20fg_8tick_rot1/val/ \
 --test_data_path /pl/active/ccnlab/ccn_images/wwi_emer_imgs_20fg_8tick_rot1/test/ \
+--seq_len 8 \
 --batch_size 1 \
 --model_type PredNet \
 --results_dir ../results/train_results \
