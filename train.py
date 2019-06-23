@@ -178,6 +178,7 @@ def main(args):
     # Training loop:
     iter = 0
     epoch_count = 0
+    ave_time = 0.0
     loss_data = [] # records loss every args.record_loss_every iters
     train_losses = [] # records mean training loss every checkpoint
     val_losses = [] # records mean validation loss every checkpoint
@@ -206,13 +207,15 @@ def main(args):
             optimizer.step()
             scheduler.step()
             # Record loss
+            iter_time = time.time() - start_t
+            ave_time = (ave_time*(iter-1) + iter_time)/iter
             if iter % args.record_loss_every == 0:
                 loss_datapoint = loss.data.item()
                 print('Epoch:', epoch_count,
                       'Iter:', iter,
                       'Loss:', loss_datapoint,
                       'lr:', scheduler.get_lr(),
-                      'time: ', time.time() - start_t)
+                      'ave time: ', ave_time)
                 loss_data.append(loss_datapoint)
             if iter >= args.num_iters:
                 break
