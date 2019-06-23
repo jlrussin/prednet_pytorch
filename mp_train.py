@@ -11,6 +11,12 @@ from data import *
 from custom_losses import *
 
 def train(rank, args, model, device, dataloader_kwargs):
+    # info
+    pid = os.getpid()
+    print("Started process on PID: ", pid)
+    print("CPUs available to this process: ", os.sched_getaffinity(pid))
+
+
     model.train()
 
     # Data loader
@@ -63,7 +69,6 @@ def train(rank, args, model, device, dataloader_kwargs):
             # Record loss
             if iter % args.record_loss_every == 0:
                 loss_datapoint = loss.data.item()
-                pid = os.getpid()
                 print('PID:', pid,
                       'Epoch:', epoch_count,
                       'Iter:', iter,
