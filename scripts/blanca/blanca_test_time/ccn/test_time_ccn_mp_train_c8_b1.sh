@@ -1,4 +1,4 @@
-##!/bin/bash
+#!/bin/bash
 #SBATCH --qos=blanca-ccn
 #SBATCH --mem=32G
 #SBATCH --time=72:00:00
