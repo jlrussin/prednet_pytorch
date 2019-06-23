@@ -11,10 +11,12 @@ from data import *
 from custom_losses import *
 
 def train(rank, args, model, device, dataloader_kwargs):
-    # info
+    # Manage cpus
     pid = os.getpid()
     print("Started process on PID: ", pid)
     print("CPUs available to this process: ", os.sched_getaffinity(pid))
+    cpu_ids = range(rank*args.num_processes,rank*args.num_processes+4)
+    os.sched_setaffinity(pid,cpu_ids)
 
 
     model.train()
