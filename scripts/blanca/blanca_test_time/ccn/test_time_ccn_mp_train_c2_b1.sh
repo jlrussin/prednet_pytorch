@@ -21,7 +21,7 @@ echo "OMP_NUM_THREADS: "
 echo $OMP_NUM_THREADS
 
 python main.py \
---num_processes 4 \
+--num_processes 1 \
 --seed 0 \
 --dataset CCN \
 --train_data_path /pl/active/ccnlab/ccn_images/wwi_emer_imgs_20fg_8tick_rot1/val/ \
