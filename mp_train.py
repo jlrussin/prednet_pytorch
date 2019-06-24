@@ -78,7 +78,7 @@ def train(rank, args, model, device, dataloader_kwargs):
                 break
         # Write stats file
         stats = {'loss_data':loss_data}
-        with open(results_file_name, 'w') as f:
+        with open(results_path, 'w') as f:
             json.dump(stats, f)
 
 def test(args,model,device,dataloader_kwargs):
