@@ -157,7 +157,6 @@ if __name__ == '__main__':
     # Test
     processes = []
     for rank in range(args.num_processes):
-        data_ids = partitions[rank]
         p = mp.Process(target=init_processes, args=(rank,test))
         p.start()
         processes.append(p)
