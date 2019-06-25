@@ -14,12 +14,8 @@ from mp_train import train, test
 #       -Include option for pin_memory if using cuda
 
 parser = argparse.ArgumentParser()
-# Multiprocessing
-parser.add_argument('--num_processes',type=int,default=2,
-                    help='Number of training processes to use.')
 parser.add_argument('--seed',type=int, default=0,
                     help='Manual seed for torch random number generator')
-
 # Training data
 parser.add_argument('--dataset',choices=['KITTI','CCN'],default='KITTI',
                     help='Dataset to use')
