@@ -2,8 +2,8 @@
 #SBATCH --qos=blanca-ccn
 #SBATCH --mem=32G
 #SBATCH --time=72:00:00
-#SBATCH --nodes=2
-#SBATCH --ntasks=2
+#SBATCH --nodes=4
+#SBATCH --ntasks=4
 #SBATCH --ntasks-per-node 1
 #SBATCH --cpus-per-task=16
 
@@ -21,16 +21,16 @@ echo $MKL_NUM_THREADS
 echo "OMP_NUM_THREADS: "
 echo $OMP_NUM_THREADS
 
-mpirun -n 2 --map-by node:PE=16 python main.py \
+mpirun -n 4 --map-by node:PE=16 python main.py \
 --seed 0 \
 --dataset CCN \
 --train_data_path /pl/active/ccnlab/ccn_images/wwi_emer_imgs_20fg_8tick_rot1/val/ \
 --val_data_path /pl/active/ccnlab/ccn_images/wwi_emer_imgs_20fg_8tick_rot1/val/ \
 --test_data_path /pl/active/ccnlab/ccn_images/wwi_emer_imgs_20fg_8tick_rot1/test/ \
 --seq_len 8 \
---batch_size 4 \
+--batch_size 2 \
 --num_iters 20 \
 --model_type PredNet \
 --results_dir ../results/train_results \
---out_data_file blanca_test_time_ccn_train_n2_c16_b4.json \
+--out_data_file blanca_test_time_ccn_train_n4_c16_b2.json \
 --record_loss_every 1

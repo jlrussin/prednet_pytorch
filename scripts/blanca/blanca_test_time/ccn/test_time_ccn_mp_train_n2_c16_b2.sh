@@ -28,9 +28,9 @@ mpirun -n 2 --map-by node:PE=16 python main.py \
 --val_data_path /pl/active/ccnlab/ccn_images/wwi_emer_imgs_20fg_8tick_rot1/val/ \
 --test_data_path /pl/active/ccnlab/ccn_images/wwi_emer_imgs_20fg_8tick_rot1/test/ \
 --seq_len 8 \
---batch_size 4 \
+--batch_size 2 \
 --num_iters 20 \
 --model_type PredNet \
 --results_dir ../results/train_results \
---out_data_file blanca_test_time_ccn_train_n2_c16_b4.json \
+--out_data_file blanca_test_time_ccn_train_n2_c16_b2.json \
 --record_loss_every 1
