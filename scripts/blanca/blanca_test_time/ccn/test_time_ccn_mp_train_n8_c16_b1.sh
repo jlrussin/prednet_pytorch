@@ -2,7 +2,7 @@
 #SBATCH --qos=blanca-ccn
 #SBATCH --mem=32G
 #SBATCH --time=72:00:00
-#SBATCH --nodelist=bnode0202,bnode0203,bnode0204,bnode0205,bnode0206,bnode0207,bnode0210,bnode0211
+#SBATCH --nodelist=bnode[0211-0218]
 #SBATCH --ntasks=8
 #SBATCH --ntasks-per-node 1
 #SBATCH --cpus-per-task=16
