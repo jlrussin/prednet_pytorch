@@ -90,24 +90,6 @@ class CCN(Dataset):
     def __len__(self):
         return len(self.fn_seqs)
 
-def get_dataloader(args,split,dataloader_kwargs):
-    if split == 'train':
-        data_path = args.train_data_path
-        sources_path = args.train_sources_path
-    elif split == 'val':
-        data_path = args.val_data_path
-        sources_path = args.val_sources_path
-    elif split == 'test':
-        data_path = args.test_data_path
-        sources_path = args.test_sources_path
-    if args.dataset == 'KITTI':
-        data = KITTI(data_path,sources_path,args.seq_len)
-    elif args.dataset == 'CCN':
-        data = CCN(data_path,args.seq_len)
-    dataloader = DataLoader(data,args.batch_size,
-                            shuffle=True,num_workers=1,**dataloader_kwargs)
-    return dataloader
-
 def split_ccn(img_dir,seq_len,val_p,test_p):
     """
     This function assumes:

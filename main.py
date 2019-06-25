@@ -2,12 +2,17 @@ import time
 import argparse
 
 import torch.multiprocessing as mp
+import torch.distributed as dist
 
 from PredNet import *
 from ConvLSTM import *
 from activations import *
 from utils import *
 from mp_train import train, test
+
+# Things to do:
+#   -Figure out device stuff
+#       -Include option for pin_memory if using cuda
 
 parser = argparse.ArgumentParser()
 # Multiprocessing
@@ -123,52 +128,39 @@ parser.add_argument('--checkpoint_path',default=None,
 parser.add_argument('--record_loss_every', type=int, default=20,
                     help='iters before printing and recording loss')
 
-if __name__ == '__main__':
-    start_train_time = time.time()
+def init_processes(rank, fn, backend='mpi'):
+    """ Initialize the distributed environment. """
+    #os.environ['MASTER_ADDR'] = '127.0.0.1' # TODO
+    #os.environ['MASTER_PORT'] = '29500' # TODO
+    dist.init_process_group(backend, rank=0, world_size=0) # handled by mpi?
+    fn(rank, args)
 
+if __name__ == '__main__':
     args = parser.parse_args()
     print(args)
 
-    use_cuda = torch.cuda.is_available()
-    device = torch.device("cuda:0" if use_cuda else "cpu")
-    dataloader_kwargs = {'pin_memory': True} if use_cuda else {}
     print("CUDA is available: ", use_cuda)
     print("MKL is available: ", torch.backends.mkl.is_available())
     print("MKL DNN is available: ", torch._C.has_mkldnn)
+    print("MPI is available: ", torch.distributed.is_mpi_available())
 
-    torch.manual_seed(args.seed)
-    mp.set_start_method('spawn')
-
-    if args.model_type == 'PredNet':
-        model = PredNet(args.in_channels,args.stack_sizes,args.R_stack_sizes,
-                        args.A_kernel_sizes,args.Ahat_kernel_sizes,
-                        args.R_kernel_sizes,args.use_satlu,args.pixel_max,
-                        args.satlu_act,args.error_act,args.LSTM_act,
-                        args.LSTM_c_act,args.bias,args.use_1x1_out,args.FC,
-                        device)
-    elif args.model_type == 'ConvLSTM':
-        model = ConvLSTM(args.in_channels,args.hidden_channels,args.kernel_size,
-                         args.LSTM_act,args.LSTM_c_act,args.out_act,
-                         args.bias,args.FC,device)
-
-    if args.load_weights_from is not None:
-        model.load_state_dict(torch.load(args.load_weights_from))
-    model.to(device)
-    model.share_memory() # grads allocated lazily, so they are not shared here
-
+    # Train
+    start_train_time = time.time()
     processes = []
     for rank in range(args.num_processes):
-        p = mp.Process(target=train,
-                       args=(rank, args, model, device, dataloader_kwargs))
+        p = mp.Process(target=init_processes, args=(rank,train))
         p.start()
         processes.append(p)
     for p in processes:
         p.join()
-
-    if args.checkpoint_path is not None:
-        torch.save(model.state_dict(),
-                   args.checkpoint_path)
-
-    test(args,model,device,dataloader_kwargs)
-
     print("Total training time: ", time.time() - start_train_time)
+
+    # Test
+    processes = []
+    for rank in range(args.num_processes):
+        data_ids = partitions[rank]
+        p = mp.Process(target=init_processes, args=(rank,test))
+        p.start()
+        processes.append(p)
+    for p in processes:
+        p.join()

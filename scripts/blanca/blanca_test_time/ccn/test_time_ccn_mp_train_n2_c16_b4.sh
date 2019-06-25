@@ -21,6 +21,9 @@ echo $MKL_NUM_THREADS
 echo "OMP_NUM_THREADS: "
 echo $OMP_NUM_THREADS
 
+export MASTER_ADDR=$(hostname -i)
+export MASTER_PORT=29500
+
 python main.py \
 --num_processes 2 \
 --seed 0 \
@@ -29,9 +32,9 @@ python main.py \
 --val_data_path /pl/active/ccnlab/ccn_images/wwi_emer_imgs_20fg_8tick_rot1/val/ \
 --test_data_path /pl/active/ccnlab/ccn_images/wwi_emer_imgs_20fg_8tick_rot1/test/ \
 --seq_len 8 \
---batch_size 4 \
---num_iters 50 \
+--batch_size 1 \
+--num_iters 20 \
 --model_type PredNet \
 --results_dir ../results/train_results \
---out_data_file blanca_test_time_ccn_train_c16_b1.json \
+--out_data_file blanca_test_time_ccn_train_n2_c16_b1.json \
 --record_loss_every 1
