@@ -127,10 +127,10 @@ parser.add_argument('--checkpoint_path',default=None,
 parser.add_argument('--record_loss_every', type=int, default=20,
                     help='iters before printing and recording loss')
 
-def init_process(rank, size, fn, backend='mpi'):
+def init_process(rank, world_size, fn, backend='mpi'):
     """ Initialize the distributed environment. """
-    dist.init_process_group(backend, rank=rank, world_size=size)
-    fn(rank, args)
+    dist.init_process_group(backend, rank=rank, world_size=world_size)
+    fn(rank, world_size, args)
 
 if __name__ == '__main__':
     args = parser.parse_args()

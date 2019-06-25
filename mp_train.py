@@ -29,19 +29,19 @@ class Partition(object):
         return self.data[data_idx]
 
 class DataPartitioner(object):
-    def __init__(self, dataset, num_processes):
+    def __init__(self, dataset, world_size):
         self.dataset = dataset
         self.partitions = []
 
-        # Partition data into num_processes partitions
+        # Partition data into world_size partitions
         rng = Random()
         rng.seed(1234) # ensures data is shuffled the same way in each process
         data_len = len(dataset)
         ids = [i for i in range(data_len)]
         rng.shuffle(ids)
 
-        for i in range(num_processes):
-            part_len = int(data_len/num_processes)
+        for i in range(world_size):
+            part_len = int(data_len/world_size)
             self.partitions.append(ids[0:part_len])
             ids = ids[part_len:]
 
@@ -56,7 +56,7 @@ def average_gradients(model):
         dist.all_reduce(param.grad.data, op=dist.ReduceOp.SUM)
         param.grad.data /= size
 
-def train(rank, args):
+def train(rank, world_size, args):
     # Info
     pid = os.getpid()
     print("Started process on PID: ", pid)
@@ -86,7 +86,7 @@ def train(rank, args):
                            args.seq_len)
     elif args.dataset == 'CCN':
         dataset = CCN(args.train_data_path,args.seq_len)
-    partitioner = DataPartitioner(dataset, args.num_processes)
+    partitioner = DataPartitioner(dataset, world_size)
     partition = partitioner.get_partition(rank)
     train_loader = DataLoader(partition, args.batch_size,
                               shuffle=True,num_workers=1,pin_memory=False)
@@ -183,7 +183,7 @@ def test(rank,args): # Don't need grad_reduce_fn
         dataset = KITTI(args.test_data_path,args.test_sources_path,args.seq_len)
     elif args.dataset == 'CCN':
         dataset = CCN(args.test_data_path,args.seq_len)
-    partitioner = DataPartitioner(dataset, args.num_processes)
+    partitioner = DataPartitioner(dataset, world_size)
     partition = partitioner.get_partition(rank)
     test_loader = DataLoader(partition, args.batch_size,
                              shuffle=True,num_workers=1,pin_memory=False)
