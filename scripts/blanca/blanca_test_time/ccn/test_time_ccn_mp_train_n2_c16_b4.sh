@@ -21,7 +21,7 @@ echo $MKL_NUM_THREADS
 echo "OMP_NUM_THREADS: "
 echo $OMP_NUM_THREADS
 
-mpirun -n 2 python main.py \
+mpirun -n 2 --map-by node:PE=16 python main.py \
 --num_processes 1 \
 --seed 0 \
 --dataset CCN \
