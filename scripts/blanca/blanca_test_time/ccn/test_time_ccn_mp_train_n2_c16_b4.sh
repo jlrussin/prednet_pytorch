@@ -21,9 +21,6 @@ echo $MKL_NUM_THREADS
 echo "OMP_NUM_THREADS: "
 echo $OMP_NUM_THREADS
 
-export MASTER_ADDR=$(hostname -i)
-export MASTER_PORT=29500
-
 mpirun -n 2 python main.py \
 --num_processes 2 \
 --seed 0 \
