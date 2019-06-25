@@ -21,8 +21,8 @@ echo $MKL_NUM_THREADS
 echo "OMP_NUM_THREADS: "
 echo $OMP_NUM_THREADS
 
-mpirun -n 1 python main.py \
---num_processes 2 \
+srun -n 2 mpirun -n 2 python main.py \
+--num_processes 1 \
 --seed 0 \
 --dataset CCN \
 --train_data_path /pl/active/ccnlab/ccn_images/wwi_emer_imgs_20fg_8tick_rot1/val/ \
