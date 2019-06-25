@@ -13,6 +13,8 @@ import torch.distributed as dist
 
 from data import *
 from custom_losses import *
+from PredNet import *
+from ConvLSTM import *
 
 class Partition(object):
     def __init__(self, data, index):

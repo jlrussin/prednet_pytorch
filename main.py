@@ -4,9 +4,6 @@ import argparse
 import torch.multiprocessing as mp
 import torch.distributed as dist
 
-from PredNet import *
-from ConvLSTM import *
-from activations import *
 from utils import *
 from mp_train import train, test
 
