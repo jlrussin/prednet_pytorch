@@ -24,7 +24,7 @@ echo $OMP_NUM_THREADS
 export MASTER_ADDR=$(hostname -i)
 export MASTER_PORT=29500
 
-python main.py \
+mpirun -n 2 python main.py \
 --num_processes 2 \
 --seed 0 \
 --dataset CCN \
