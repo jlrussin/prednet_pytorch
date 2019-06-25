@@ -130,23 +130,25 @@ def train(rank, world_size, args):
                 loss = loss_fn(preds,X_no_t0)
             # Backward pass
             loss.backward()
+            fb_time = time.time() - start_t
             start_reduce_t = time.time()
             average_gradients(model) # average gradients across all models
-            print("Reduce time:",time.time() - start_reduce_t)
+            reduce_time = time.time() - start_reduce_t
             optimizer.step()
             scheduler.step()
             # Record loss
             if iter % args.record_loss_every == 0:
                 loss_datapoint = loss.data.item()
-                print('Rank:',rank,
+                print('World_size:',dist.get_world_size(),
+                      'Rank:',rank,
                       'Torch.dist rank',dist.get_rank(),
                       'PID:', pid,
                       'Epoch:', epoch_count,
                       'Iter:', iter,
                       'Loss:', loss_datapoint,
                       'lr:', scheduler.get_lr(),
-                      'world_size:',dist.get_world_size(),
-                      'time: ', time.time() - start_t)
+                      'Forward-back time:',fb_time,
+                      'Reduce_time:',reduce_time)
                 loss_data.append(loss_datapoint)
             if iter >= args.num_iters:
                 break
