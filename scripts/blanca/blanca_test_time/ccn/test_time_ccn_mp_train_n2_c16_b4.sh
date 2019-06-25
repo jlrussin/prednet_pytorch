@@ -12,7 +12,7 @@ export PYTHONUNBUFFERED=1
 echo Running on $HOSTNAME
 
 source /pl/active/ccnlab/conda/etc/profile.d/conda.sh
-conda activate pytorch_source
+conda activate pytorch_mpi
 
 export MKL_NUM_THREADS=16 OMP_NUM_THREADS=16
 
