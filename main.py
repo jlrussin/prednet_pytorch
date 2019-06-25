@@ -126,11 +126,9 @@ parser.add_argument('--checkpoint_path',default=None,
 parser.add_argument('--record_loss_every', type=int, default=20,
                     help='iters before printing and recording loss')
 
-def init_processes(rank, fn, backend='mpi'):
+def init_process(rank, size, fn, backend='mpi'):
     """ Initialize the distributed environment. """
-    #os.environ['MASTER_ADDR'] = '127.0.0.1' # TODO
-    #os.environ['MASTER_PORT'] = '29500' # TODO
-    dist.init_process_group(backend, rank=0, world_size=0) # handled by mpi?
+    dist.init_process_group(backend, rank=rank, world_size=size)
     fn(rank, args)
 
 if __name__ == '__main__':
@@ -143,20 +141,16 @@ if __name__ == '__main__':
 
     # Train
     start_train_time = time.time()
-    processes = []
-    for rank in range(args.num_processes):
-        p = mp.Process(target=init_processes, args=(rank,train))
-        p.start()
-        processes.append(p)
-    for p in processes:
-        p.join()
+    world_size = int(os.environ['OMPI_COMM_WORLD_SIZE'])
+    world_rank = int(os.environ['OMPI_COMM_WORLD_RANK'])
+    init_process(world_rank,world_size,train)
     print("Total training time: ", time.time() - start_train_time)
 
     # Test
-    processes = []
-    for rank in range(args.num_processes):
-        p = mp.Process(target=init_processes, args=(rank,test))
-        p.start()
-        processes.append(p)
-    for p in processes:
-        p.join()
+    #processes = []
+    #for rank in range(args.num_processes):
+    #    p = mp.Process(target=init_processes, args=(rank,test))
+    #    p.start()
+    #    processes.append(p)
+    #for p in processes:
+    #    p.join()
