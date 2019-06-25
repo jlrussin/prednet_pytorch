@@ -1,6 +1,7 @@
 import time
 import argparse
 
+import torch
 import torch.multiprocessing as mp
 import torch.distributed as dist
 
