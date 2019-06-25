@@ -139,7 +139,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print(args)
 
-    print("CUDA is available: ", use_cuda)
     print("MKL is available: ", torch.backends.mkl.is_available())
     print("MKL DNN is available: ", torch._C.has_mkldnn)
     print("MPI is available: ", torch.distributed.is_mpi_available())
