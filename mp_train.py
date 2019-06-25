@@ -38,7 +38,7 @@ class DataPartitioner(object):
         rng.seed(1234) # ensures data is shuffled the same way in each process
         data_len = len(dataset)
         ids = [i for i in range(data_len)]
-        rng.shuffle(indexes)
+        rng.shuffle(ids)
 
         for i in range(num_processes):
             part_len = int(data_len/num_processes)
