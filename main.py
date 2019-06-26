@@ -130,16 +130,19 @@ def init_process(rank, world_size, fn, backend='mpi'):
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    print(args)
 
-    print("MKL is available: ", torch.backends.mkl.is_available())
-    print("MKL DNN is available: ", torch._C.has_mkldnn)
-    print("MPI is available: ", torch.distributed.is_mpi_available())
-
-    # Train
-    start_train_time = time.time()
+    # Get environment variables from mpi
     world_size = int(os.environ['OMPI_COMM_WORLD_SIZE'])
     world_rank = int(os.environ['OMPI_COMM_WORLD_RANK'])
+
+    if world_rank == 0:
+        print(args)
+        print("MKL is available: ", torch.backends.mkl.is_available())
+        print("MKL DNN is available: ", torch._C.has_mkldnn)
+        print("MPI is available: ", torch.distributed.is_mpi_available())
+
+    # Initialize process
+    start_train_time = time.time()
     init_process(world_rank,world_size,train)
     print("Total training time: ", time.time() - start_train_time)
 

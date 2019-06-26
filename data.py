@@ -70,7 +70,7 @@ class CCN(Dataset):
                 self.fn_seqs.append(fn_seq)
                 self.labels.append(label)
                 fn_seq = []
-        print("Dataset has %d sequences" % len(self.fn_seqs))
+        #print("Dataset has %d sequences" % len(self.fn_seqs))
 
     def __getitem__(self,index):
         fn_seq = self.fn_seqs[index]

@@ -90,6 +90,9 @@ def train(rank, world_size, args):
     partition = partitioner.get_partition(rank)
     train_loader = DataLoader(partition, args.batch_size,
                               shuffle=True,num_workers=1,pin_memory=False)
+    if rank == 0:
+        print("Dataset has %d samples total" % len(dataset))
+    print("%s: Partition of dataset has %d samples" % (hostname,len(partition)))
 
     # Loss function
     loss_fn = get_loss_fn(args.loss,args.layer_lambdas)
