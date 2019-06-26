@@ -1,8 +1,8 @@
 import os
+import socket
 import json
 import numpy as np
 import time
-from math import ceil
 from random import Random
 
 import torch
@@ -58,8 +58,8 @@ def average_gradients(model):
 
 def train(rank, world_size, args):
     # Info
-    pid = os.getpid()
-    print("Started process on PID: ", pid)
+    hostname = socket.gethostname().split('.')[0] # for printing
+    print("Started process on node: ", hostname)
 
     # Model
     device = 'cpu' # cpu only
@@ -111,13 +111,15 @@ def train(rank, world_size, args):
     # Training loop:
     iter = 0
     epoch_count = 0
+    ave_iter_time = 0.0
+    ave_reduce_time = 0.0
     while iter < args.num_iters:
         epoch_count += 1
         for X in train_loader:
             iter += 1
             optimizer.zero_grad()
             # Forward
-            start_t = time.time()
+            iter_tick = time.time()
             if args.model_type == 'PredNet':
                 preds,errors = model(X)
             else:
@@ -130,25 +132,30 @@ def train(rank, world_size, args):
                 loss = loss_fn(preds,X_no_t0)
             # Backward pass
             loss.backward()
-            fb_time = time.time() - start_t
-            start_reduce_t = time.time()
+            iter_tock = time.time()
+            # All reduce: average gradients
+            reduce_tick = time.time()
             average_gradients(model) # average gradients across all models
-            reduce_time = time.time() - start_reduce_t
+            reduce_tock = time.time()
+            # Optimizer, scheduler
             optimizer.step()
             scheduler.step()
+            # Time stats
+            iter_time = iter_tock - iter_tick
+            reduce_time = reduce_tock - reduce_tick
+            ave_iter_time = (ave_iter_time*(iter-1) + iter_time)/iter
+            ave_reduce_time = (ave_reduce_time*(iter-1) + reduce_time)/iter
             # Record loss
             if iter % args.record_loss_every == 0:
                 loss_datapoint = loss.data.item()
-                print('World_size:',dist.get_world_size(),
+                print(hostname,
                       'Rank:',rank,
-                      'Torch.dist rank',dist.get_rank(),
-                      'PID:', pid,
                       'Epoch:', epoch_count,
                       'Iter:', iter,
+                      'Ave iter time:',ave_iter_time,
+                      'Ave reduce time:',ave_reduce_time,
                       'Loss:', loss_datapoint,
-                      'lr:', scheduler.get_lr(),
-                      'Forward-back time:',fb_time,
-                      'Reduce_time:',reduce_time)
+                      'lr:', scheduler.get_lr())
                 loss_data.append(loss_datapoint)
             if iter >= args.num_iters:
                 break
