@@ -2,35 +2,33 @@
 #SBATCH --qos=blanca-ccn
 #SBATCH --mem=32G
 #SBATCH --time=72:00:00
-#SBATCH --nodes=1
+#SBATCH --nodelist=bnode[0202-0207,0211,0216,0221,0224]
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=8
+#SBATCH --ntasks-per-node 1
+#SBATCH --cpus-per-task=16
 
 export HOME=`getent passwd $USER | cut -d':' -f6`
 export PYTHONUNBUFFERED=1
 echo Running on $HOSTNAME
 
 source /pl/active/ccnlab/conda/etc/profile.d/conda.sh
-conda activate pytorch_source
+conda activate pytorch_mpi
 
-export MKL_NUM_THREADS=8 OMP_NUM_THREADS=8
+export MKL_NUM_THREADS=16 OMP_NUM_THREADS=16
 
 echo "MKL_NUM_THREADS: "
 echo $MKL_NUM_THREADS
 echo "OMP_NUM_THREADS: "
 echo $OMP_NUM_THREADS
 
-python main.py \
---num_processes 1 \
+mpirun -n 1 --map-by node:PE=16 python main.py \
 --seed 0 \
 --dataset CCN \
 --train_data_path /pl/active/ccnlab/ccn_images/wwi_emer_imgs_20fg_8tick_rot1/val/ \
---val_data_path /pl/active/ccnlab/ccn_images/wwi_emer_imgs_20fg_8tick_rot1/val/ \
---test_data_path /pl/active/ccnlab/ccn_images/wwi_emer_imgs_20fg_8tick_rot1/test/ \
 --seq_len 8 \
 --batch_size 1 \
---num_iters 50 \
+--num_iters 20 \
 --model_type PredNet \
 --results_dir ../results/train_results \
---out_data_file blanca_test_time_ccn_train_c8_b1.json \
+--out_data_file blanca_test_time_ccn_train_n1_c16_b1.json \
 --record_loss_every 1
