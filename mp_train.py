@@ -91,8 +91,9 @@ def train(rank, world_size, args):
     train_loader = DataLoader(partition, args.batch_size,
                               shuffle=True,num_workers=1,pin_memory=False)
     if rank == 0:
-        print("Dataset has %d samples total" % len(dataset))
-    print("%s: Partition of dataset has %d samples" % (hostname,len(partition)))
+        print("Train dataset has %d samples total" % len(dataset))
+    print("%s: Partition of train dataset has %d samples" % (hostname,
+                                                             len(partition)))
 
     # Loss function
     loss_fn = get_loss_fn(args.loss,args.layer_lambdas)
@@ -167,16 +168,18 @@ def train(rank, world_size, args):
         with open(results_path, 'w') as f:
             json.dump(stats, f)
         if rank == 0 and args.checkpoint_path is not None:
+            print("Saving weights to %s" % args.checkpoint_path)
             torch.save(model.state_dict(),
                        args.checkpoint_path)
 
-def test(rank,args): # Don't need grad_reduce_fn
+def test(rank,world_size,args):
     # Info
-    pid = os.getpid()
-    print("Started process on PID: ", pid)
+    hostname = socket.gethostname().split('.')[0] # for printing
+    print("Started process on node: ", hostname)
 
     # Model
     device = 'cpu' # cpu only
+    torch.manual_seed(args.seed) # all processes start with the same model
     if args.model_type == 'PredNet':
         model = PredNet(args.in_channels,args.stack_sizes,args.R_stack_sizes,
                         args.A_kernel_sizes,args.Ahat_kernel_sizes,
@@ -192,18 +195,22 @@ def test(rank,args): # Don't need grad_reduce_fn
     if args.checkpoint_path is not None:
         model.load_state_dict(torch.load(args.checkpoint_path))
     else:
-        print("Testing not possible because model_weights were not saved")
+        print("Must include checkpoint_path argument to test")
     model.eval()
 
     # Data
     if args.dataset == 'KITTI':
-        dataset = KITTI(args.test_data_path,args.test_sources_path,args.seq_len)
+        dataset = KITTI(args.val_data_path,args.val_sources_path,args.seq_len)
     elif args.dataset == 'CCN':
-        dataset = CCN(args.test_data_path,args.seq_len)
+        dataset = CCN(args.val_data_path,args.seq_len)
     partitioner = DataPartitioner(dataset, world_size)
     partition = partitioner.get_partition(rank)
-    test_loader = DataLoader(partition, args.batch_size,
-                             shuffle=True,num_workers=1,pin_memory=False)
+    val_loader = DataLoader(partition, args.batch_size,
+                              shuffle=True,num_workers=1,pin_memory=False)
+    if rank == 0:
+        print("Val dataset has %d samples total" % len(dataset))
+    print("%s: Partition of val dataset has %d samples" % (hostname,
+                                                           len(partition)))
 
     # Loss function: always use mse for testing
     mse_loss = nn.MSELoss()
@@ -211,7 +218,7 @@ def test(rank,args): # Don't need grad_reduce_fn
     # Test model on partition
     with torch.no_grad():
         losses = []
-        for X in test_loader:
+        for X in val_loader:
             # Forward
             X = X.to(device)
             if args.model_type == 'PredNet':

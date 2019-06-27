@@ -123,7 +123,7 @@ parser.add_argument('--checkpoint_path',default=None,
 parser.add_argument('--record_loss_every', type=int, default=20,
                     help='iters before printing and recording loss')
 
-def init_process(rank, world_size, fn, backend='mpi'):
+def init_process(rank, world_size, fn, args, backend='mpi'):
     """ Initialize the distributed environment. """
     dist.init_process_group(backend, rank=rank, world_size=world_size)
     fn(rank, world_size, args)
@@ -140,17 +140,14 @@ if __name__ == '__main__':
         print("MKL is available: ", torch.backends.mkl.is_available())
         print("MKL DNN is available: ", torch._C.has_mkldnn)
         print("MPI is available: ", torch.distributed.is_mpi_available())
+        # TODO: cuda stuff
 
-    # Initialize process
+    # Train
     start_train_time = time.time()
-    init_process(world_rank,world_size,train)
+    init_process(world_rank,world_size,train,args)
     print("Total training time: ", time.time() - start_train_time)
 
     # Test
-    #processes = []
-    #for rank in range(args.num_processes):
-    #    p = mp.Process(target=init_processes, args=(rank,test))
-    #    p.start()
-    #    processes.append(p)
-    #for p in processes:
-    #    p.join()
+    start_test_time = time.time()
+    init_process(world_rank,world_size,test,args)
+    print("Total testing time: ", time.time() - start_test_time)
