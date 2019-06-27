@@ -2,7 +2,7 @@
 #SBATCH --qos=blanca-ccn
 #SBATCH --mem=32G
 #SBATCH --time=72:00:00
-#SBATCH --nodes=1
+#SBATCH --nodelist=bnode0202
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node 1
 #SBATCH --cpus-per-task=16
@@ -23,7 +23,7 @@ echo $OMP_NUM_THREADS
 
 python get_predicted_images.py \
 --dataset CCN \
---test_data_path /pl/active/ccnlab/ccn_images/wwi_emer_imgs_20fg_8tick_rot1/test/ \
+--test_data_path /pl/active/ccnlab/ccn_images/wwi_emer_imgs_20fg_8tick_rot1/train/ \
 --seq_len 8 \
 --load_weights_from ../model_weights/mp_train_n10_c16_b1_prednet_defaults_ccn.pt \
 --results_dir ../results/images/defaults_ccn \
