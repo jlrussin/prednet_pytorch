@@ -23,7 +23,7 @@ python train.py \
 --test_data_path ../data/kitti_data/X_val.hkl \
 --test_sources_path ../data/kitti_data/sources_val.hkl \
 --batch_size 4 \
---num_iters 1000 \
+--num_iters 20 \
 --lr_steps 0 \
 --out_data_file time_test.json \
---record_loss_every 100
+--record_loss_every 1
