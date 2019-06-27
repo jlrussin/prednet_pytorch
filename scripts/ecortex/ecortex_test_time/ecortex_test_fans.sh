@@ -18,4 +18,4 @@ echo "Training PredNet with default hyperparameters on KITTI dataset"
 python train.py \
 --out_data_file test_ecortex_fans.json \
 --checkpoint_every 20 \
---record_loss_every 500
+--record_loss_every 5
