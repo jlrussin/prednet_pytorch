@@ -172,13 +172,14 @@ class ACell(nn.Module):
 # Ahat cell = [Conv,ReLU]
 class AhatCell(nn.Module):
     def __init__(self,in_channels,out_channels,
-                 conv_kernel_size,conv_bias,
+                 conv_kernel_size,conv_bias,act,
                  satlu_act='hardtanh',use_satlu=False,pixel_max=1.0):
         super(AhatCell,self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.conv_kernel_size = conv_kernel_size
         self.conv_bias = conv_bias
+        self.act = act
         self.satlu_act = satlu_act
         self.use_satlu = use_satlu
         self.pixel_max = pixel_max
@@ -193,7 +194,7 @@ class AhatCell(nn.Module):
                                conv_kernel_size,conv_stride,
                                conv_pad_,conv_dilation,conv_groups,
                                conv_bias)
-        self.relu = nn.ReLU()
+        self.out_act = get_activation(act)
         if use_satlu:
             self.satlu = SatLU(satlu_act,self.pixel_max)
 
@@ -205,7 +206,7 @@ class AhatCell(nn.Module):
         # Compute A_hat
         R_l = F.pad(R_l,padding)
         A_hat = self.conv(R_l)
-        A_hat = self.relu(A_hat)
+        A_hat = self.out_act(A_hat)
         if self.use_satlu:
             A_hat = self.satlu(A_hat)
         return A_hat
@@ -225,7 +226,7 @@ class ECell(nn.Module):
 class PredNet(nn.Module):
     def __init__(self,in_channels,stack_sizes,R_stack_sizes,
                  A_kernel_sizes,Ahat_kernel_sizes,R_kernel_sizes,
-                 use_satlu,pixel_max,satlu_act,error_act,
+                 use_satlu,pixel_max,Ahat_act,satlu_act,error_act,
                  LSTM_act,LSTM_c_act,bias=True,
                  use_1x1_out=True,FC=False,device='cpu'):
         super(PredNet,self).__init__()
@@ -237,6 +238,7 @@ class PredNet(nn.Module):
         self.R_kernel_sizes = R_kernel_sizes
         self.use_satlu = use_satlu
         self.pixel_max = pixel_max
+        self.Ahat_act = Ahat_act
         self.satlu_act = satlu_act
         self.error_act = error_act
         self.LSTM_act = LSTM_act
@@ -294,11 +296,11 @@ class PredNet(nn.Module):
             if self.use_satlu and l == 0:
                 # Lowest layer uses SatLU
                 cell = AhatCell(in_channels,out_channels,
-                                conv_kernel_size,bias,satlu_act,
+                                conv_kernel_size,bias,Ahat_act,satlu_act,
                                 use_satlu=True,pixel_max=pixel_max)
             else:
                 cell = AhatCell(in_channels,out_channels,
-                                conv_kernel_size,bias)
+                                conv_kernel_size,bias,Ahat_act)
             Ahat_layers.append(cell)
         self.Ahat_layers = nn.ModuleList(Ahat_layers)
 

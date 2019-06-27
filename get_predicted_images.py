@@ -49,6 +49,9 @@ parser.add_argument('--Ahat_kernel_sizes', type=int, nargs='+',
 parser.add_argument('--R_kernel_sizes', type=int, nargs='+', default=[3,3,3,3],
                     help='Kernel sizes for each Ahat module' +
                          'Length should be equal to number of layers')
+parser.add_argument('--Ahat_act', default='relu',
+                    choices=['relu','sigmoid','tanh','hardsigmoid'],
+                    help='Type of activation for output of Ahat cell.')
 parser.add_argument('--use_satlu', type=str2bool, default=True,
                     help='Boolean indicating whether to use SatLU in Ahat.')
 parser.add_argument('--satlu_act', default='hardtanh',
@@ -109,9 +112,9 @@ def main(args):
         model = PredNet(args.in_channels,args.stack_sizes,args.R_stack_sizes,
                         args.A_kernel_sizes,args.Ahat_kernel_sizes,
                         args.R_kernel_sizes,args.use_satlu,args.pixel_max,
-                        args.satlu_act,args.error_act,args.LSTM_act,
-                        args.LSTM_c_act,args.bias,args.use_1x1_out,args.FC,
-                        device)
+                        args.Ahat_act,args.satlu_act,args.error_act,
+                        args.LSTM_act,args.LSTM_c_act,args.bias,
+                        args.use_1x1_out,args.FC,device)
     elif args.model_type == 'ConvLSTM':
         model = ConvLSTM(args.in_channels,args.hidden_channels,args.kernel_size,
                          args.LSTM_act,args.LSTM_c_act,args.out_act,

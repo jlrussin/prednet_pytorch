@@ -10,7 +10,8 @@ from utils import *
 from mp_train import train, test
 
 # Things to do:
-#   -Figure out device stuff
+#   -Integrate with train.py
+#       -figure out cuda stuff
 #       -Include option for pin_memory if using cuda
 
 parser = argparse.ArgumentParser()
@@ -65,6 +66,9 @@ parser.add_argument('--Ahat_kernel_sizes', type=int, nargs='+',
 parser.add_argument('--R_kernel_sizes', type=int, nargs='+', default=[3,3,3,3],
                     help='Kernel sizes for each Ahat module' +
                          'Length should be equal to number of layers')
+parser.add_argument('--Ahat_act', default='relu',
+                    choices=['relu','sigmoid','tanh','hardsigmoid'],
+                    help='Type of activation for output of Ahat cell.')
 parser.add_argument('--use_satlu', type=str2bool, default=True,
                     help='Boolean indicating whether to use SatLU in Ahat.')
 parser.add_argument('--satlu_act', default='hardtanh',
