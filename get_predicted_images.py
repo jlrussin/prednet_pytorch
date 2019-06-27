@@ -17,10 +17,10 @@ parser = argparse.ArgumentParser()
 # Training data
 parser.add_argument('--dataset',choices=['KITTI','CCN'],default='KITTI',
                     help='Dataset to use')
-parser.add_argument('--test_data_hkl',
+parser.add_argument('--test_data_path',
                     default='../data/kitti_data/X_test.hkl',
                     help='Path to test images hkl file')
-parser.add_argument('--test_sources_hkl',
+parser.add_argument('--test_sources_path',
                     default='../data/kitti_data/sources_test.hkl',
                     help='Path to test sources hkl file')
 parser.add_argument('--seq_len', type=int, default=10,
