@@ -15,6 +15,8 @@ from utils import *
 
 parser = argparse.ArgumentParser()
 # Training data
+parser.add_argument('--dataset',choices=['KITTI','CCN'],default='KITTI',
+                    help='Dataset to use')
 parser.add_argument('--test_data_hkl',
                     default='../data/kitti_data/X_test.hkl',
                     help='Path to test images hkl file')
@@ -96,7 +98,11 @@ def main(args):
     device = torch.device("cuda:0" if use_cuda else "cpu")
 
     # Data: Don't shuffle to keep indexes consistent
-    test_data = KITTI(args.test_data_hkl,args.test_sources_hkl,args.seq_len)
+    if args.dataset == 'KITTI':
+        test_data = KITTI(args.test_data_path,args.test_sources_path,
+                          args.seq_len)
+    elif args.dataset == 'CCN':
+        test_data = CCN(args.test_data_path,args.seq_len)
 
     # Load model
     if args.model_type == 'PredNet':
