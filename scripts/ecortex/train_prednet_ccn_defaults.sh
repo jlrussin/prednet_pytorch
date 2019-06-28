@@ -18,9 +18,9 @@ echo "Training PredNet with default hyperparameters on CCN dataset"
 
 python train.py \
 --dataset CCN \
---train_data_path /pl/active/ccnlab/ccn_images/wwi_emer_imgs_20fg_8tick_rot1/train/ \
---val_data_path /pl/active/ccnlab/ccn_images/wwi_emer_imgs_20fg_8tick_rot1/val/ \
---test_data_path /pl/active/ccnlab/ccn_images/wwi_emer_imgs_20fg_8tick_rot1/test/ \
+--train_data_path ../data/ccn_images/train/ \
+--val_data_path ../data/ccn_images/val/ \
+--test_data_path ../data/ccn_images/test/ \
 --seq_len 8 \
 --batch_size 8 \
 --num_iters 50000 \
