@@ -2,7 +2,7 @@
 #SBATCH -p local
 #SBATCH -A ecortex
 #SBATCH --qos=nonpremptiong
-#SBATCH --mem=24G
+#SBATCH --mem=32G
 #SBATCH --time=72:00:00
 #SBATCH --gres=gpu:1
 #SBATCH -c 4
