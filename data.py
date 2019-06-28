@@ -97,6 +97,7 @@ def split_ccn(img_dir,seq_len,val_p,test_p):
         -Category labels are in split[4], except car/motorcycle in 4/5
         -Tick numbers are in split[7], except car/motorcycle in 8
     """
+    numpy.random.seed(0)
     print("Loading filenmaes from %s" % img_dir)
     fn_seqs = [] # list of lists of filenmanes
     fn_seq = [] # current list of filenames
