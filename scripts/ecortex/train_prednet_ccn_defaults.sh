@@ -25,6 +25,7 @@ python train.py \
 --batch_size 4 \
 --num_iters 50000 \
 --model_type PredNet \
+--load_weights_from ../model_weights/train_prednet_defaults_ccn.pt \
 --results_dir ../results/train_results \
 --out_data_file train_prednet_defaults_ccn.json \
 --checkpoint_path ../model_weights/train_prednet_defaults_ccn.pt \
