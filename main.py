@@ -10,6 +10,7 @@ from utils import *
 from mp_train import train, test
 
 # Things to do:
+#   -Way to initialize test method after train?
 #   -Integrate with train.py
 #       -figure out cuda stuff
 #       -Include option for pin_memory if using cuda
@@ -150,8 +151,9 @@ if __name__ == '__main__':
     start_train_time = time.time()
     init_process(world_rank,world_size,train,args)
     print("Total training time: ", time.time() - start_train_time)
+    dist.barrier()
 
     # Test
-    start_test_time = time.time()
-    init_process(world_rank,world_size,test,args)
-    print("Total testing time: ", time.time() - start_test_time)
+    #start_test_time = time.time()
+    #init_process(world_rank,world_size,test,args)
+    #print("Total testing time: ", time.time() - start_test_time)
