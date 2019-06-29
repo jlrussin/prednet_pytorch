@@ -172,7 +172,7 @@ class ACell(nn.Module):
 # Ahat cell = [Conv,ReLU]
 class AhatCell(nn.Module):
     def __init__(self,in_channels,out_channels,
-                 conv_kernel_size,conv_bias,act,
+                 conv_kernel_size,conv_bias,act='relu',
                  satlu_act='hardtanh',use_satlu=False,pixel_max=1.0):
         super(AhatCell,self).__init__()
         self.in_channels = in_channels
@@ -300,7 +300,7 @@ class PredNet(nn.Module):
                                 use_satlu=True,pixel_max=pixel_max)
             else:
                 cell = AhatCell(in_channels,out_channels,
-                                conv_kernel_size,bias,Ahat_act='relu')
+                                conv_kernel_size,bias) # relu for l > 0
             Ahat_layers.append(cell)
         self.Ahat_layers = nn.ModuleList(Ahat_layers)
 
