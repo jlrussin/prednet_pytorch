@@ -300,7 +300,7 @@ class PredNet(nn.Module):
                                 use_satlu=True,pixel_max=pixel_max)
             else:
                 cell = AhatCell(in_channels,out_channels,
-                                conv_kernel_size,bias,Ahat_act)
+                                conv_kernel_size,bias,Ahat_act='relu')
             Ahat_layers.append(cell)
         self.Ahat_layers = nn.ModuleList(Ahat_layers)
 
