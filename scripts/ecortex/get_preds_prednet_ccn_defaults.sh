@@ -18,7 +18,7 @@ echo "Getting preds from PredNet with default hyperparameters on CCN dataset"
 
 python get_predicted_images.py \
 --dataset CCN \
---test_data_path ../data/ccn_images/test/ \
+--test_data_path ../data/ccn_images/train/ \
 --seq_len 8 \
 --model_type PredNet \
 --load_weights_from ../model_weights/train_prednet_defaults_ccn.pt \
