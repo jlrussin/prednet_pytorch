@@ -57,7 +57,7 @@ parser.add_argument('--use_satlu', type=str2bool, default=True,
 parser.add_argument('--satlu_act', default='hardtanh',
                     choices=['hardtanh','logsigmoid'],
                     help='Type of activation to use for SatLU in Ahat.')
-parser.add_argument('--pixel_max', type=float, default=255.0,
+parser.add_argument('--pixel_max', type=float, default=1.0,
                     help='Maximum output value for Ahat if using SatLU.')
 parser.add_argument('--error_act', default='relu',
                     choices=['relu','sigmoid','tanh','hardsigmoid'],
