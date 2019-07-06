@@ -149,8 +149,7 @@ class Partitioner(object):
 def aggregate_space(rep,method):
     if method == 'none':
         batch_size = rep.shape[0]
-        n_channels = rep.shape[1]
-        aggregated_rep = rep.view(batch_size,n_channels,-1) # flatten space
+        aggregated_rep = rep.view(batch_size,-1) # flatten space
     elif method == 'mean':
         aggregated_rep = torch.mean(rep,dim=[2,3]) # average over space
     elif method == 'max':
