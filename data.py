@@ -62,10 +62,10 @@ class CCN(Dataset):
             split = fn.split('_')
             if split[4] in ['car','motorcycle']:
                 t = int(split[8])
-                label = split[4] + '_' + split[5]
+                label = split[4] + '_' + split[5] + '_' + split[6]
             else:
                 t = int(split[7])
-                label = split[4]
+                label = split[4] + '_' + split[5]
             if t == seq_len-1:
                 self.fn_seqs.append(fn_seq)
                 self.labels.append(label)
