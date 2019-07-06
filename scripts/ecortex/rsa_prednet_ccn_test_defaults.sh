@@ -16,7 +16,7 @@ conda activate pytorch1.0
 echo "Doing RSA with PredNet with default hyperparameters on CCN dataset"
 
 python RSA.py \
---aggregate_method mean \
+--aggregate_method max \
 --similarity_measure corr \
 --test_data_path ../data/ccn_images/test/ \
 --seq_len 8 \
