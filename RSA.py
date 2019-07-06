@@ -244,7 +244,6 @@ def main(args):
             layer_reps = [layer_rep/n_samples for layer_rep in layer_reps]
             label_reps.append(layer_reps)
             print("Finished processing samples for label: %s" % label)
-            print(layer_reps[0].shape)
         layer_lists = list(map(list, zip(*label_reps))) # transpose lists
         layer_tensors = []
         for l in range(nb_layers+1):
