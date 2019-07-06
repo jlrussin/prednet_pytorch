@@ -257,7 +257,7 @@ def main(args):
     print("Computing similarity matrices")
     for l,layer_tensor in enumerate(layer_tensors):
         S = get_similarity_matrix(layer_tensor,args.similarity_measure)
-        S = S.numpy()
+        S = S.cpu().numpy()
         layer_name = 'layer%d' % (l-1) if l > 0 else 'pixels'
         RSA_data[layer_name] = S
 
