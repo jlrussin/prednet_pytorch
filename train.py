@@ -150,13 +150,14 @@ def main(args):
     test_loader = DataLoader(test_data,args.batch_size,shuffle=True)
 
     # Model
+    model_out = 'error' if args.loss == 'E' else 'pred'
     if args.model_type == 'PredNet':
         model = PredNet(args.in_channels,args.stack_sizes,args.R_stack_sizes,
                         args.A_kernel_sizes,args.Ahat_kernel_sizes,
                         args.R_kernel_sizes,args.use_satlu,args.pixel_max,
                         args.Ahat_act,args.satlu_act,args.error_act,
                         args.LSTM_act,args.LSTM_c_act,args.bias,
-                        args.use_1x1_out,args.FC,device)
+                        args.use_1x1_out,args.FC,model_out,device)
     elif args.model_type == 'ConvLSTM':
         model = ConvLSTM(args.in_channels,args.hidden_channels,args.kernel_size,
                          args.LSTM_act,args.LSTM_c_act,args.out_act,
@@ -195,16 +196,13 @@ def main(args):
             # Forward
             start_t = time.time()
             X = X.to(device)
-            if args.model_type == 'PredNet':
-                preds,errors = model(X)
-            else:
-                preds = model(X)
+            output = model(X)
             # Compute loss
             if args.loss == 'E':
-                loss = loss_fn(errors)
+                loss = loss_fn(output)
             else:
                 X_no_t0 = X[:,1:,:,:,:]
-                loss = loss_fn(preds,X_no_t0)
+                loss = loss_fn(output,X_no_t0)
             # Backward pass
             loss.backward()
             optimizer.step()
@@ -262,23 +260,23 @@ def checkpoint(dataloader, model, device, args):
     # Always use MSE loss for checkpointing:
     mse_loss = nn.MSELoss()
     model.eval()
+    model_output = model.output # Save model output type to undo after done
+    model.output = 'pred' # model output is pred for mse loss
     with torch.no_grad():
         losses = []
         for X in dataloader:
             # Forward
             X = X.to(device)
-            if args.model_type == 'PredNet':
-                preds,errors = model(X)
-            else:
-                preds = model(X)
+            output = model(X)
             # Compute loss
             X_no_t0 = X[:,1:,:,:,:]
-            loss = mse_loss(preds,X_no_t0)
+            loss = mse_loss(output,X_no_t0)
             # Record loss
             loss_datapoint = loss.data.item()
             losses.append(loss_datapoint)
 
     model.train()
+    model.output = model_output # Undo model output change to resume training
     return np.mean(losses)
 
 if __name__ == '__main__':

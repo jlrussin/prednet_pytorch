@@ -228,7 +228,7 @@ class PredNet(nn.Module):
                  A_kernel_sizes,Ahat_kernel_sizes,R_kernel_sizes,
                  use_satlu,pixel_max,Ahat_act,satlu_act,error_act,
                  LSTM_act,LSTM_c_act,bias=True,
-                 use_1x1_out=True,FC=False,device='cpu'):
+                 use_1x1_out=True,FC=False,output='error',device='cpu'):
         super(PredNet,self).__init__()
         self.in_channels = in_channels
         self.stack_sizes = stack_sizes
@@ -246,6 +246,7 @@ class PredNet(nn.Module):
         self.bias = bias
         self.use_1x1_out=use_1x1_out
         self.FC = FC # use fully connected ConvLSTM
+        self.output = output
         self.device = device
 
         # Make sure consistent number of layers
@@ -311,8 +312,7 @@ class PredNet(nn.Module):
         # Get initial states
         (H_tm1,C_tm1),E_tm1 = self.initialize(X)
 
-        preds = [] # predictions for visualizing
-        errors = [] # errors for computing loss
+        outputs = []
 
         # Loop through image sequence
         seq_len = X.shape[1]
@@ -333,14 +333,18 @@ class PredNet(nn.Module):
                 else:
                     R_t[l],(H_t[l],C_t[l]) = R_layer(E_tm1[l],R_t[l+1],
                                                      (H_tm1[l],C_tm1[l]))
+            if self.output == 'rep':
+                if t == seq_len - 1: # only return reps for last time step
+                    outputs = R_t
 
             # Update feedforward path starting from the bottom
             for l in range(self.nb_layers):
                 # Compute Ahat
                 Ahat_layer = self.Ahat_layers[l]
                 Ahat_t = Ahat_layer(R_t[l])
-                if l == 0 and t > 0:
-                    preds.append(Ahat_t)
+                if self.output == 'pred':
+                    if l == 0 and t > 0:
+                        outputs.append(Ahat_t)
 
                 # Compute E
                 E_t[l] = self.E_layer(A_t,Ahat_t)
@@ -352,17 +356,22 @@ class PredNet(nn.Module):
 
             # Update
             (H_tm1,C_tm1),E_tm1 = (H_t,C_t),E_t
-            if t > 0:
-                errors.append(E_t) # First time step doesn't count
-        # Return errors as tensor
-        errors_t = torch.zeros(seq_len,self.nb_layers)
-        for t in range(seq_len-1):
-            for l in range(self.nb_layers):
-                errors_t[t,l] = torch.mean(errors[t][l])
-        # Return preds as tensor
-        preds_t = [pred.unsqueeze(1) for pred in preds]
-        preds_t = torch.cat(preds_t,dim=1) # (batch,len,in_channels,H,W)
-        return preds_t, errors_t
+            if self.output == 'error':
+                if t > 0:
+                    outputs.append(E_t) # First time step doesn't count
+        # errors and preds returned as tensors
+        if self.output == 'error':
+            outputs_t = torch.zeros(seq_len,self.nb_layers)
+            for t in range(seq_len-1):
+                for l in range(self.nb_layers):
+                    outputs_t[t,l] = torch.mean(outputs[t][l])
+        elif self.output == 'pred':
+            outputs_t = [output.unsqueeze(1) for output in outputs]
+            outputs_t = torch.cat(outputs_t,dim=1) # (batch,len,in_channels,H,W)
+        # reps returned as list of tensors
+        elif self.output == 'rep':
+            outputs_t = outputs
+        return outputs_t
 
     def initialize(self,X):
         # input dimensions

@@ -108,13 +108,14 @@ def main(args):
         test_data = CCN(args.test_data_path,args.seq_len)
 
     # Load model
+    model_out = 'pred' # Always pred to get predicted images
     if args.model_type == 'PredNet':
         model = PredNet(args.in_channels,args.stack_sizes,args.R_stack_sizes,
                         args.A_kernel_sizes,args.Ahat_kernel_sizes,
                         args.R_kernel_sizes,args.use_satlu,args.pixel_max,
                         args.Ahat_act,args.satlu_act,args.error_act,
                         args.LSTM_act,args.LSTM_c_act,args.bias,
-                        args.use_1x1_out,args.FC,device)
+                        args.use_1x1_out,args.FC,model_out,device)
     elif args.model_type == 'ConvLSTM':
         model = ConvLSTM(args.in_channels,args.hidden_channels,args.kernel_size,
                          args.LSTM_act,args.LSTM_c_act,args.out_act,
@@ -140,10 +141,7 @@ def main(args):
             X = test_data[i].to(device)
             X = X.unsqueeze(0) # Add batch dim
             seq_len = X.shape[1]
-            if args.model_type == 'PredNet':
-                preds,errors = model(X)
-            else:
-                preds = model(X)
+            preds = model(X)
             preds = preds.squeeze(0).permute(0,2,3,1) # (len,H,W,channels)
             preds = preds.cpu().numpy()
             X = X.squeeze(0).permute(0,2,3,1) # (len,H,W,channels)

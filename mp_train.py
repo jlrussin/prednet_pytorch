@@ -57,11 +57,13 @@ def average_gradients(model):
         param.grad.data /= size
 
 def train(rank, world_size, args):
+
     # Info
     hostname = socket.gethostname().split('.')[0] # for printing
     print("Started process on node: ", hostname)
 
     # Model
+    model_out = 'error' if args.loss == 'E' else 'pred'
     device = 'cpu' # cpu only
     torch.manual_seed(args.seed) # all processes start with the same model
     if args.model_type == 'PredNet':
@@ -70,7 +72,7 @@ def train(rank, world_size, args):
                         args.R_kernel_sizes,args.use_satlu,args.pixel_max,
                         args.Ahat_act,args.satlu_act,args.error_act,
                         args.LSTM_act,args.LSTM_c_act,args.bias,
-                        args.use_1x1_out,args.FC,device)
+                        args.use_1x1_out,args.FC,model_out,device)
     elif args.model_type == 'ConvLSTM':
         model = ConvLSTM(args.in_channels,args.hidden_channels,args.kernel_size,
                          args.LSTM_act,args.LSTM_c_act,args.out_act,
@@ -124,16 +126,13 @@ def train(rank, world_size, args):
             optimizer.zero_grad()
             # Forward
             iter_tick = time.time()
-            if args.model_type == 'PredNet':
-                preds,errors = model(X)
-            else:
-                preds = model(X)
+            output = model(X)
             # Compute loss
             if args.loss == 'E':
-                loss = loss_fn(errors)
+                loss = loss_fn(output)
             else:
                 X_no_t0 = X[:,1:,:,:,:]
-                loss = loss_fn(preds,X_no_t0)
+                loss = loss_fn(output,X_no_t0)
             # Backward pass
             loss.backward()
             iter_tock = time.time()
@@ -178,15 +177,16 @@ def test(rank,world_size,args):
     print("Started process on node: ", hostname)
 
     # Model
+    model_out = 'pred' # output is always pred for mse loss
     device = 'cpu' # cpu only
     torch.manual_seed(args.seed) # all processes start with the same model
     if args.model_type == 'PredNet':
         model = PredNet(args.in_channels,args.stack_sizes,args.R_stack_sizes,
                         args.A_kernel_sizes,args.Ahat_kernel_sizes,
                         args.R_kernel_sizes,args.use_satlu,args.pixel_max,
-                        args.satlu_act,args.error_act,args.LSTM_act,
-                        args.LSTM_c_act,args.bias,args.use_1x1_out,args.FC,
-                        device)
+                        args.Ahat_act,args.satlu_act,args.error_act,
+                        args.LSTM_act,args.LSTM_c_act,args.bias,
+                        args.use_1x1_out,args.FC,model_out,device)
     elif args.model_type == 'ConvLSTM':
         model = ConvLSTM(args.in_channels,args.hidden_channels,args.kernel_size,
                          args.LSTM_act,args.LSTM_c_act,args.out_act,
@@ -221,13 +221,10 @@ def test(rank,world_size,args):
         for X in val_loader:
             # Forward
             X = X.to(device)
-            if args.model_type == 'PredNet':
-                preds,errors = model(X)
-            else:
-                preds = model(X)
+            output = model(X)
             # Compute loss
             X_no_t0 = X[:,1:,:,:,:]
-            loss = mse_loss(preds,X_no_t0)
+            loss = mse_loss(output,X_no_t0)
             # Record loss
             loss_datapoint = loss.data.item()
             losses.append(loss_datapoint)
