@@ -224,23 +224,19 @@ def main(args):
                 pixels = X[-1] # Use last image to compare to RGB reps
                 # Aggregate across space
                 agg_pixels = aggregate_space(pixels,args.aggregate_method)
-                agg_reps = []
+                agg_reps = [agg_pixels] # first layer is pixels
                 for l in range(nb_layers):
                     agg_rep = aggregate_space(reps[l],args.aggregate_method)
                     agg_reps.append(agg_rep)
                 # Sum batch
-                pixel_sum = torch.sum(agg_pixels,dim=0)
                 layer_sums = []
-                for l in range(nb_layers):
+                for l in range(nb_layers+1):
                     layer_sum = torch.sum(agg_reps[l],dim=0)
                     layer_sums.append(layer_sum)
                 # Update running sums
                 if batch_i == 0:
-                    layer_reps = [pixel_sum] # first layer is pixels
-                    for l in range(nb_layers):
-                        layer_reps.append(layer_sums[l])
+                    layer_reps = layer_sums
                 else:
-                    layer_reps[0] += pixel_sum
                     for l in range(nb_layers+1):
                         layer_reps[l] += layer_sums[l]
             # Divide by n_samples to get average
