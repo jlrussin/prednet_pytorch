@@ -34,6 +34,9 @@ parser.add_argument('--seq_len', type=int, default=8,
                     help='Number of images in each ccn sequence')
 parser.add_argument('--batch_size', type=int, default=4,
                     help='Samples per batch')
+parser.add_argument('--idx_dict_hkl',
+                    default='../data/ccn_images/train_label_idx_dict.hkl',
+                    help='Path to dictionary with ids of each label')
 
 # Models
 parser.add_argument('--model_type', choices=['PredNet'],
@@ -115,14 +118,23 @@ class Partition(object):
         return self.data[data_idx]
 
 class Partitioner(object):
-    def __init__(self,dataset):
+    def __init__(self,dataset,idx_dict_hkl):
         self.dataset = dataset
+        self.idx_dict_json = idx_dict_hkl
         self.idx_dict = {}
-        for i,(_,label) in enumerate(dataset):
-            if label in self.idx_dict:
-                self.idx_dict[label].append(i)
-            else:
-                self.idx_dict[label] = [i]
+        if os.path.exists(idx_dict_hkl):
+            print("Loading idx dict from %s" % idx_dict_hkl)
+            self.idx_dict = hkl.load(idx_dict_hkl)
+        else:
+            for i,(_,label) in enumerate(dataset):
+                if i % 100 == 0:
+                    print("Partitioning dataset: [%f%%]" % (100*i/len(dataset)))
+                if label in self.idx_dict:
+                    self.idx_dict[label].append(i)
+                else:
+                    self.idx_dict[label] = [i]
+            print("Saving idx dict to %s" % idx_dict_hkl)
+            hkl.dump(self.idx_dict,idx_dict_hkl)
         self.labels = self.idx_dict.keys()
 
     def get_partition(self,label):
@@ -198,7 +210,7 @@ def main(args):
 
     # Dataset
     test_data = CCN(args.test_data_path,args.seq_len,return_labels=True)
-    partitioner = Partitioner(test_data)
+    partitioner = Partitioner(test_data,args.idx_dict_hkl)
     labels = sorted(partitioner.labels)
     n_labels = len(labels)
     print("There are %d labels in the dataset" % n_labels)
