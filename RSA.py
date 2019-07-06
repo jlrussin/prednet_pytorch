@@ -127,8 +127,8 @@ class Partitioner(object):
             self.idx_dict = hkl.load(idx_dict_hkl)
         else:
             for i,(_,label) in enumerate(dataset):
-                if i % 100 == 0:
-                    print("Partitioning dataset: [%f%%]" % (100*i/len(dataset)))
+                if i % 2000 == 0:
+                    print("Partitioning dataset: [%d%%]" % (100*i//len(dataset)))
                 if label in self.idx_dict:
                     self.idx_dict[label].append(i)
                 else:
