@@ -232,6 +232,7 @@ def main(args):
                 layer_sums = []
                 for l in range(nb_layers+1):
                     layer_sum = torch.sum(agg_reps[l],dim=0)
+                    layer_sum = layer_sum.unsqueeze(0) # Add label dimension
                     layer_sums.append(layer_sum)
                 # Update running sums
                 if batch_i == 0:
@@ -243,10 +244,10 @@ def main(args):
             layer_reps = [layer_rep/n_samples for layer_rep in layer_reps]
             label_reps.append(layer_reps)
             print("Finished processing samples for label: %s" % label)
+            print(layer_reps[0].shape)
         layer_lists = list(map(list, zip(*label_reps))) # transpose lists
         layer_tensors = []
         for l in range(nb_layers+1):
-            layer_lists = [x.unsqueeze(0) for x in layer_lists[l]] # label dim
             layer_tensor = torch.cat(layer_lists[l],dim=0)
             layer_tensors.append(layer_tensor)
 
