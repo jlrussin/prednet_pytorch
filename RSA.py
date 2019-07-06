@@ -15,7 +15,9 @@ from ConvLSTM import *
 from utils import *
 
 # TODO:
-#   -Debug
+#   -Way over memory usage:
+#       -aggregate space for each sample immediately
+#       -keep running ave of samples (e.g. ((i -1)*X_0 +X_1)/(i))
 
 parser = argparse.ArgumentParser()
 # RSA
@@ -128,7 +130,7 @@ class Partitioner(object):
         else:
             for i,(_,label) in enumerate(dataset):
                 if i % 2000 == 0:
-                    print("Partitioning dataset: [%d%%]" % (100*i//len(dataset)))
+                    print("Partitioning dataset [%d%%]" % (100*i//len(dataset)))
                 if label in self.idx_dict:
                     self.idx_dict[label].append(i)
                 else:
@@ -144,28 +146,17 @@ class Partitioner(object):
         print("Partition has %d sequences" % len(partition))
         return partition
 
-def aggregate(reps,method):
-    """
-    Aggregate across samples and space:
-        -Average across samples
-        -Use given method to aggregate across space
-    """
-    nb_layers = len(reps)
-    aggregated_layers = []
-    for l in range(nb_layers):
-        cat = torch.cat(reps[l],dim=0) # concatenate all samples
-        ave = torch.mean(cat,dim=0) # average all samples
-        if method == 'none':
-            n_channels = ave.shape[0]
-            aggregated_layer = ave.view(n_channels,-1) # flatten space
-        elif method == 'mean':
-            aggregated_layer = torch.mean(ave,dim=[1,2]) # average over space
-        elif method == 'max':
-            # TODO
-            raise NotImplementedError
-        aggregated_layer = aggregated_layer.unsqueeze(0) # Add label dim
-        aggregated_layers.append(aggregated_layer)
-    return aggregated_layers
+def aggregate_space(rep,method):
+    if method == 'none':
+        batch_size = rep.shape[0]
+        n_channels = rep.shape[1]
+        aggregated_rep = rep.view(batch_size,n_channels,-1) # flatten space
+    elif method == 'mean':
+        aggregated_rep = torch.mean(rep,dim=[2,3]) # average over space
+    elif method == 'max':
+        # TODO
+        raise NotImplementedError
+    return aggregated_rep
 
 def cosine_similarity(X):
     norm = torch.norm(X,dim=1,keepdim=True)
@@ -219,24 +210,49 @@ def main(args):
         # Get list of layer representations for each label
         label_reps = []
         for label_i,label in enumerate(labels):
-            print("Starting label %d/%d: %s" % (label_i,n_labels,label))
+            # Get data partition for current label
+            print("Starting label %d/%d: %s" % (label_i+1,n_labels,label))
             partition = partitioner.get_partition(label)
+            n_samples = len(partition)
             dataloader = DataLoader(partition,args.batch_size)
+            # Run model, keeping running sum of representations
             layer_reps = [[] for l in range(nb_layers+1)] # nb_layers + pixels
-            for batch in dataloader:
+            for batch_i,batch in enumerate(dataloader):
                 X = batch[0].to(device)
-                reps = model(X)
+                # Get representations
+                reps = model(X) # list of reps, one for each layer
                 pixels = X[-1] # Use last image to compare to RGB reps
-                layer_reps[0].append(pixels)
+                # Aggregate across space
+                agg_pixels = aggregate_space(pixels,args.aggregate_method)
+                agg_reps = []
                 for l in range(nb_layers):
-                    layer_reps[l+1].append(reps[l])
-            layer_reps = aggregate(layer_reps,args.aggregate_method)
+                    agg_rep = aggregate_space(reps[l],args.aggregate_method)
+                    agg_reps.append(agg_rep)
+                # Sum batch
+                pixel_sum = torch.sum(agg_pixels,dim=0)
+                layer_sums = []
+                for l in range(nb_layers):
+                    layer_sum = torch.sum(agg_reps[l],dim=0)
+                    layer_sums.append(layer_sum)
+                # Update running sums
+                if batch_i == 0:
+                    layer_reps = [pixel_sum] # first layer is pixels
+                    for l in range(nb_layers):
+                        layer_reps.append(layer_sums[l])
+                else:
+                    layer_reps[0] += pixel_sum
+                    for l in range(nb_layers+1):
+                        layer_reps[l] += layer_sums[l]
+            # Divide by n_samples to get average
+            layer_reps = [layer_rep/n_samples for layer_rep in layer_reps]
             label_reps.append(layer_reps)
             print("Finished processing samples for label: %s" % label)
         layer_lists = list(map(list, zip(*label_reps))) # transpose lists
         layer_tensors = []
         for l in range(nb_layers+1):
-            layer_tensors.append(torch.cat(layer_lists[l],dim=0))
+            layer_lists = [x.unsqueeze(0) for x in layer_lists[l]] # label dim
+            layer_tensor = torch.cat(layer_lists[l],dim=0)
+            layer_tensors.append(layer_tensor)
 
     # Save similarity matrix for each layer
     info = {'aggregate_method':args.aggregate_method,
