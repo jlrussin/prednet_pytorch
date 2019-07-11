@@ -2,6 +2,7 @@ import os
 import numpy as np
 import hickle as hkl
 import torch
+import torch.nn.functional as F
 from torch.utils.data import Dataset,DataLoader
 from PIL import Image
 
@@ -47,11 +48,13 @@ class KITTI(Dataset):
         return len(self.start_end_idxs)
 
 class CCN(Dataset):
-    def __init__(self,img_dir,seq_len,norm=True,return_labels=False):
+    def __init__(self,img_dir,seq_len,norm=True,return_labels=False,
+                 downsample_size=(128,128)):
         self.img_dir = img_dir
         self.seq_len = seq_len
         self.norm = norm # normalize pixel values to [0,1]
         self.return_labels = return_labels # return images, labels
+        self.downsample_size = downsample_size # tuple with (h,w) for image size
         # Organize filenames into a list of seqs
         self.labels = []
         self.fn_seqs = []
@@ -79,6 +82,8 @@ class CCN(Dataset):
         arr_seq = np.stack(img_seq)
         img_tensor = torch.tensor(arr_seq,dtype=torch.float)
         img_tensor = img_tensor.permute(0,3,1,2) # (len,channels,height,width)
+        # Downsample
+        img_tensor = F.interpolate(img_tensor,size=self.downsample_size)
         if self.norm:
             img_tensor = img_tensor / 255.
         if self.return_labels:
