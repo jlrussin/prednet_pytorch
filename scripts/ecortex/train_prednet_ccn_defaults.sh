@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH -p local
 #SBATCH -A ecortex
-#SBATCH --nodelist=local[01,02]
+#SBATCH --nodelist=local01
 #SBATCH --qos=nonpreemptlong
 #SBATCH --mem=32G
 #SBATCH --time=72:00:00
