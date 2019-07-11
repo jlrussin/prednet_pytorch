@@ -22,10 +22,9 @@ python train.py \
 --val_data_path ../data/ccn_images/val/ \
 --test_data_path ../data/ccn_images/test/ \
 --seq_len 8 \
---batch_size 4 \
+--batch_size 16 \
 --num_iters 50000 \
 --model_type PredNet \
---load_weights_from ../model_weights/train_prednet_defaults_ccn.pt \
 --results_dir ../results/train_results \
 --out_data_file train_prednet_defaults_ccn.json \
 --checkpoint_path ../model_weights/train_prednet_defaults_ccn.pt \
