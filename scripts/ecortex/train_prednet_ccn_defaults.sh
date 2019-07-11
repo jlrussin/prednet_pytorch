@@ -22,7 +22,7 @@ python train.py \
 --val_data_path ../data/ccn_images/val/ \
 --test_data_path ../data/ccn_images/test/ \
 --seq_len 8 \
---batch_size 16 \
+--batch_size 8 \
 --num_iters 50000 \
 --model_type PredNet \
 --results_dir ../results/train_results \
