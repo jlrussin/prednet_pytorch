@@ -3,7 +3,7 @@
 #SBATCH -A ecortex
 #SBATCH --qos=normal
 #SBATCH --mem=32G
-#SBATCH --time=72:00:00
+#SBATCH --time=11:00:00
 #SBATCH --gres=gpu:1
 #SBATCH -c 4
 
