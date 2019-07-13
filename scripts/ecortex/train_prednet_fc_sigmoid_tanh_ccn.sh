@@ -32,6 +32,6 @@ python train.py \
 --FC True \
 --results_dir ../results/train_results \
 --out_data_file train_prednet_defaults_ccn.json \
---checkpoint_path ../model_weights/train_prednet_defaults_ccn.pt \
+--checkpoint_path ../model_weights/train_prednet_fc_sigmoid_tanh_ccn.pt \
 --checkpoint_every 2 \
 --record_loss_every 200
