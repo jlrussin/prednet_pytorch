@@ -20,8 +20,9 @@ def prev_frame_loss(ccn_data_dir):
 
     losses = []
     for i,X in enumerate(dataloader):
-        p = 100*i/len(dataloader)
-        print("Computing average mse loss of previous frame: %.2f%%" % p)
+        if i % 100 == 0:
+            p = 100*i/len(dataloader)
+            print("Computing average mse loss of previous frame: %.2f%%" % p)
         X = X.to(device)
         X_tm1 = X[:,:-1,:,:,:]
         X_t = X[:,1:,:,:,:]
