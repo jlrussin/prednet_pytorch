@@ -19,11 +19,13 @@ def prev_frame_loss(ccn_data_dir):
     mse_loss = nn.MSELoss()
 
     losses = []
-    for X in dataloader:
+    for i,X in enumerate(dataloader):
+        p = 100*i/len(dataloader)
+        print("Computing average mse loss of previous frame: %.2f%%" % p)
         X = X.to(device)
         X_tm1 = X[:,:-1,:,:,:]
         X_t = X[:,1:,:,:,:]
         loss = mse_loss(X_tm1,X_t)
         losses.append(loss.data.item())
     mean_loss = np.mean(losses)
-    print("Previous frame loss for data in %s: %d" % (ccn_data_dir,mean_loss))
+    print("Previous frame loss for data in %s: %f" % (ccn_data_dir,mean_loss))
