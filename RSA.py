@@ -14,11 +14,6 @@ from PredNet import *
 from ConvLSTM import *
 from utils import *
 
-# TODO:
-#   -Way over memory usage:
-#       -aggregate space for each sample immediately
-#       -keep running ave of samples (e.g. ((i -1)*X_0 +X_1)/(i))
-
 parser = argparse.ArgumentParser()
 # RSA
 parser.add_argument('--aggregate_method', choices=['mean','max','none'],
@@ -27,7 +22,9 @@ parser.add_argument('--aggregate_method', choices=['mean','max','none'],
 parser.add_argument('--similarity_measure', choices=['corr','cos'],
                     default='corr',
                     help='Similarity measure to use: correlation or cosine')
-
+parser.add_argument('--cat_dict_json', default=None,
+                    help='Json file with dictionary mapping categories' +
+                         'to supercategories. Default just uses categories.')
 # Training data
 parser.add_argument('--test_data_path',
                     default='../data/ccn_images/train/',
@@ -178,6 +175,42 @@ def get_similarity_matrix(X,measure):
         S = cosine_similarity(X)
     return S
 
+def sort_similarity_matrix(S,cat_dict,labels):
+    cats = [cat_dict[l] for l in labels] # list of categories for each object
+    # Sort so that categories are contiguous
+    sorted_rows = np.argsort(cats)
+    S_by_cat = np.zeros_like(S)
+    for old_i,new_i in enumerate(sorted_rows):
+        for old_j,new_j in enumerate(sorted_rows):
+            S_by_cat[new_i,new_j] = S[old_i,old_j]
+    labels_by_cat = [labels[i] for i in sorted_rows]
+    sorted_cats = [cats[i] for i in sorted_rows]
+    # Get first ids of each contiguous category
+    cat_set = [] # ordered set of unique categories
+    first_cat_ids = [] # starting id of each category
+    prev_cat = 'NULL'
+    for i,cat in enumerate(sorted_cats):
+        if cat != prev_cat:
+            cat_set.append(cat)
+            first_cat_ids.append(i)
+            prev_cat = cat
+    first_cat_ids.append(len(sorted_cats)) # append final index for ease
+    # Sort by similarity in each category
+    sorted_rows = []
+    for i in range(len(cat_set)):
+        start_row = first_cat_ids[i]
+        end_row = first_cat_ids[i+1]
+        S_cat = S_by_cat[start_row:end_row,start_row:end_row]
+        S_cat_means = np.mean(S_cat,axis=1)
+        sorted_cat_ids = np.argsort(S_cat_means) + start_row
+        sorted_rows = sorted_rows + sorted_cat_ids.tolist()
+    sorted_S = np.zeros_like(S_by_cat)
+    for old_i,new_i in enumerate(sorted_rows):
+        for old_j,new_j in enumerate(sorted_rows):
+            sorted_S[new_i,new_j] = S_by_cat[old_i,old_j]
+    sorted_labels = [labels[i] for i in sorted_rows]
+    return sorted_S,sorted_labels
+
 def main(args):
     # CUDA
     use_cuda = torch.cuda.is_available()
@@ -249,16 +282,27 @@ def main(args):
             layer_tensor = torch.cat(layer_lists[l],dim=0)
             layer_tensors.append(layer_tensor)
 
-    # Save similarity matrix for each layer
+    # Set up data for saving similarity matrices
     info = {'aggregate_method':args.aggregate_method,
             'similarity_measure':args.similarity_measure}
-    RSA_data = {'info':info,'labels':labels}
-    print("Computing similarity matrices")
+    RSA_data = {'info':info}
+    if args.cat_dict_json is None:
+        cats = set([l.split('_')[0] for l in labels])
+        cat_dict = {cat:cat for cat in cats}
+    else:
+        with open(args.cat_dict_json,'r') as f:
+            cat_dict = json.load(f)
+    print("Computing and sorting similarity matrices")
     for l,layer_tensor in enumerate(layer_tensors):
+        # Get similarity matrix
         S = get_similarity_matrix(layer_tensor,args.similarity_measure)
         S = S.cpu().numpy()
+        # Sort similarity matrix
+        sorted_S,sorted_labels = sort_similarity_matrix(S,cat_dict,labels)
+        # Save matrices
         layer_name = 'layer%d' % (l-1) if l > 0 else 'pixels'
-        RSA_data[layer_name] = S
+        RSA_data[layer_name] = sorted_S
+    RSA_data['labels'] = sorted_labels # all sorted labels should be the same
 
     # Save similarity matrices
     dir = args.results_dir
