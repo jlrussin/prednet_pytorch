@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH -p local
 #SBATCH -A ecortex
-#SBATCH --nodelist=local01
-#SBATCH --qos=nonpreemptlong
+#SBATCH --qos=preemptlong
 #SBATCH --mem=32G
 #SBATCH --time=72:00:00
 #SBATCH --gres=gpu:1
@@ -16,6 +15,7 @@ source /usr/local/anaconda3/etc/profile.d/conda.sh
 conda activate pytorch1.0
 
 echo "Training PredNet with fc, sigmoid, tanh on CCN dataset"
+echo "Learning rate is 0.01, no steps in scheduler"
 
 python train.py \
 --dataset CCN \
@@ -30,8 +30,10 @@ python train.py \
 --LSTM_c_act tanh \
 --bias True \
 --FC True \
+--learning_rate 0.01 \
+--lr_steps 0 \
 --results_dir ../results/train_results \
---out_data_file train_prednet_fc_sigmoid_tanh_ccn.json \
---checkpoint_path ../model_weights/train_prednet_fc_sigmoid_tanh_ccn.pt \
+--out_data_file train_prednet_fc_sigmoid_tanh_ccn_lr0p01.json \
+--checkpoint_path ../model_weights/train_prednet_fc_sigmoid_tanh_ccn_lr0p01.pt \
 --checkpoint_every 2 \
 --record_loss_every 200

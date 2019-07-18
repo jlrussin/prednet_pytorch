@@ -14,7 +14,7 @@ echo Running on $HOSTNAME
 source /usr/local/anaconda3/etc/profile.d/conda.sh
 conda activate pytorch1.0
 
-echo "Getting preds from PredNet with default hyperparameters on CCN dataset"
+echo "Getting preds from PredNet with fc sigmoid tanh on CCN dataset"
 
 python get_predicted_images.py \
 --dataset CCN \
@@ -25,6 +25,6 @@ python get_predicted_images.py \
 --LSTM_c_act tanh \
 --bias True \
 --FC True \
---load_weights_from ../model_weights/train_prednet_defaults_ccn.pt \
+--load_weights_from ../model_weights/train_prednet_fc_sigmoid_tanh_ccn.pt \
 --results_dir ../results/images/fc_sigmoid_tanh_ccn \
 --out_data_file prednet_fc_sigmoid_tanh_ccn
