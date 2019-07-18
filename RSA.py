@@ -176,38 +176,39 @@ def get_similarity_matrix(X,measure):
     return S
 
 def sort_similarity_matrix(S,cat_dict,labels):
-    cats = [cat_dict[l] for l in labels] # list of categories for each object
+    cats = [l.split('_')[0] for l in labels] # list of categories
+    supercats = [cat_dict[c] for c in cats] # list of supercategories
     # Sort so that categories are contiguous
-    sorted_rows = np.argsort(cats)
+    sorted_rows = np.argsort(supercats)
     S_by_cat = np.zeros_like(S)
     for old_i,new_i in enumerate(sorted_rows):
         for old_j,new_j in enumerate(sorted_rows):
             S_by_cat[new_i,new_j] = S[old_i,old_j]
     labels_by_cat = [labels[i] for i in sorted_rows]
-    sorted_cats = [cats[i] for i in sorted_rows]
-    # Get first ids of each contiguous category
-    cat_set = [] # ordered set of unique categories
-    first_cat_ids = [] # starting id of each category
-    prev_cat = 'NULL'
-    for i,cat in enumerate(sorted_cats):
-        if cat != prev_cat:
-            cat_set.append(cat)
-            first_cat_ids.append(i)
-            prev_cat = cat
-    first_cat_ids.append(len(sorted_cats)) # append final index for ease
+    sorted_supercats = [supercats[i] for i in sorted_rows]
+    # Get first ids of each contiguous supercategory
+    scat_set = [] # ordered set of unique supercategories
+    first_scat_ids = [] # starting id of each supercategory
+    prev_scat = 'NULL'
+    for i,scat in enumerate(sorted_supercats):
+        if scat != prev_scat:
+            scat_set.append(scat)
+            first_scat_ids.append(i)
+            prev_scat = scat
+    first_scat_ids.append(len(sorted_supercats)) # append final index for ease
     # Sort by similarity in each category
     sorted_rows = []
-    for i in range(len(cat_set)):
-        start_row = first_cat_ids[i]
-        end_row = first_cat_ids[i+1]
-        S_cat = S_by_cat[start_row:end_row,start_row:end_row]
-        S_cat_means = np.mean(S_cat,axis=1)
-        sorted_cat_ids = np.argsort(S_cat_means) + start_row
-        sorted_rows = sorted_rows + sorted_cat_ids.tolist()
-    sorted_S = np.zeros_like(S_by_cat)
+    for i in range(len(scat_set)):
+        start_row = first_scat_ids[i]
+        end_row = first_scat_ids[i+1]
+        S_scat = S_by_scat[start_row:end_row,start_row:end_row]
+        S_scat_means = np.mean(S_scat,axis=1)
+        sorted_scat_ids = np.argsort(S_scat_means) + start_row
+        sorted_rows = sorted_rows + sorted_scat_ids.tolist()
+    sorted_S = np.zeros_like(S_by_scat)
     for old_i,new_i in enumerate(sorted_rows):
         for old_j,new_j in enumerate(sorted_rows):
-            sorted_S[new_i,new_j] = S_by_cat[old_i,old_j]
+            sorted_S[new_i,new_j] = S_by_scat[old_i,old_j]
     sorted_labels = [labels[i] for i in sorted_rows]
     return sorted_S,sorted_labels
 
