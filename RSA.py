@@ -180,10 +180,10 @@ def sort_similarity_matrix(S,cat_dict,labels):
     supercats = [cat_dict[c] for c in cats] # list of supercategories
     # Sort so that categories are contiguous
     sorted_rows = np.argsort(supercats)
-    S_by_cat = np.zeros_like(S)
+    S_by_scat = np.zeros_like(S)
     for old_i,new_i in enumerate(sorted_rows):
         for old_j,new_j in enumerate(sorted_rows):
-            S_by_cat[new_i,new_j] = S[old_i,old_j]
+            S_by_scat[new_i,new_j] = S[old_i,old_j]
     labels_by_cat = [labels[i] for i in sorted_rows]
     sorted_supercats = [supercats[i] for i in sorted_rows]
     # Get first ids of each contiguous supercategory
