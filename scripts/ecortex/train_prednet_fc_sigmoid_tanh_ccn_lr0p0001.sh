@@ -30,6 +30,7 @@ python train.py \
 --LSTM_c_act tanh \
 --bias True \
 --FC True \
+--load_weights_from ../model_weights/train_prednet_fc_sigmoid_tanh_ccn_lr0p0001.pt \
 --learning_rate 0.0001 \
 --lr_steps 0 \
 --results_dir ../results/train_results \
