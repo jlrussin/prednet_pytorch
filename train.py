@@ -185,8 +185,11 @@ def main(args):
     ave_time = 0.0
     loss_data = [] # records loss every args.record_loss_every iters
     train_losses = [] # records mean training loss every checkpoint
+    train_corrs = [] # records mean training  correlation every checkpoint
     val_losses = [] # records mean validation loss every checkpoint
+    val_corrs = [] # records mean validation correlation every checkpoint
     test_losses = [] # records mean test loss every checkpoint
+    test_corrs = [] # records mean test correlation every checkpoint
     best_val_loss = float("inf") # will only save best weights
     while iter < args.num_iters:
         epoch_count += 1
@@ -225,26 +228,35 @@ def main(args):
         if epoch_count % args.checkpoint_every == 0 or last_epoch:
             # Train
             print("Checking training loss...")
-            train_loss = checkpoint(train_loader, model, device, args)
+            train_loss,train_corr = checkpoint(train_loader,model,device,args)
             print("Training loss is ", train_loss)
+            print("Training average correlation is ", train_corr)
             train_losses.append(train_loss)
+            train_corrs.append(train_corr)
             # Validation
             print("Checking validation loss...")
-            val_loss = checkpoint(val_loader, model, device, args)
+            val_loss,val_corr = checkpoint(val_loader,model,device,args)
             print("Validation loss is ", val_loss)
+            print("Validation average correlation is ",val_corr)
             val_losses.append(val_loss)
+            val_corrs.append(val_corr)
             # Test
             print("Checking test loss...")
-            test_loss = checkpoint(test_loader, model, device, args)
+            test_loss,test_corr = checkpoint(test_loader,model,device,args)
             print("Test loss is ", test_loss)
+            print("Test average correlation is ", test_corr)
             test_losses.append(test_loss)
+            test_corrs.append(test_corr)
             # Write stats file
             if not os.path.isdir(args.results_dir):
                 os.mkdir(args.results_dir)
             stats = {'loss_data':loss_data,
                      'train_mse_losses':train_losses,
+                     'train_corrs':train_corrs,
                      'val_mse_losses':val_losses,
-                     'test_mse_losses':test_losses}
+                     'val_corrs':val_corrs,
+                     'test_mse_losses':test_losses,
+                     'test_corrs':test_corrs}
             results_file_name = '%s/%s' % (args.results_dir,args.out_data_file)
             with open(results_file_name, 'w') as f:
                 json.dump(stats, f)
@@ -256,6 +268,22 @@ def main(args):
                                args.checkpoint_path)
 
 
+def correlation(X,Y):
+    batch_size = X.shape[0]
+    X = X.view(batch_size,-1)
+    Y = Y.view(batch_size,-1)
+    X_bar = torch.mean(X,dim=1,keepdim=True)
+    Y_bar = torch.mean(Y,dim=1,keepdim=True)
+    X_c = X - X_bar
+    Y_c = Y - Y_bar
+    X_norm = torch.norm(X_c,dim=1,keepdim=True)
+    Y_norm = torch.norm(Y_c,dim=1,keepdim=True)
+    X_n = X_c/X_norm
+    Y_n = Y_c/Y_norm
+    corr = torch.sum(X_c*Y_c,dim=1)
+    ave_corr = torch.mean(corr,dim=0)
+    return ave_corr
+
 def checkpoint(dataloader, model, device, args):
     # Always use MSE loss for checkpointing:
     mse_loss = nn.MSELoss()
@@ -264,6 +292,7 @@ def checkpoint(dataloader, model, device, args):
     model.output = 'pred' # model output is pred for mse loss
     with torch.no_grad():
         losses = []
+        corrs = []
         for X in dataloader:
             # Forward
             X = X.to(device)
@@ -271,13 +300,16 @@ def checkpoint(dataloader, model, device, args):
             # Compute loss
             X_no_t0 = X[:,1:,:,:,:]
             loss = mse_loss(output,X_no_t0)
+            corr = correlation(output,X_no_t0)
             # Record loss
             loss_datapoint = loss.data.item()
+            corr_datapoint = corr.data.item()
             losses.append(loss_datapoint)
+            corrs.append(corr_datapoint)
 
     model.train()
     model.output = model_output # Undo model output change to resume training
-    return np.mean(losses)
+    return np.mean(losses),np.mean(corrs)
 
 if __name__ == '__main__':
     args = parser.parse_args()
