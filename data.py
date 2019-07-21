@@ -73,6 +73,12 @@ class CCN(Dataset):
                 self.fn_seqs.append(fn_seq)
                 self.labels.append(label)
                 fn_seq = []
+        self.label_ns = {}
+        for label in self.labels:
+            if label not in self.label_ns:
+                self.label_ns[label] = 1
+            else:
+                self.label_ns[label] += 1
         #print("Dataset has %d sequences" % len(self.fn_seqs))
 
     def __getitem__(self,index):
