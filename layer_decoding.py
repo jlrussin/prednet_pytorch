@@ -241,7 +241,7 @@ def main(args):
                 agg_reps.append(agg_rep)
             # Decode
             outputs = []
-            for rep,decoder in zip(reps,decoders):
+            for rep,decoder in zip(agg_reps,decoders):
                 output = decoder(rep)
                 outputs.append(output)
             # Compute loss and take optimizer step
