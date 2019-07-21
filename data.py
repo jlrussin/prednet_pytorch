@@ -50,7 +50,8 @@ class KITTI(Dataset):
 class CCN(Dataset):
     def __init__(self,img_dir,seq_len,norm=True,
                  return_labels=False,return_cats=False,
-                 downsample_size=(128,128)):
+                 downsample_size=(128,128),
+                 last_only=False):
         self.img_dir = img_dir
         self.seq_len = seq_len
         self.norm = norm # normalize pixel values to [0,1]
@@ -59,6 +60,7 @@ class CCN(Dataset):
         msg = "Can't return labels and cats"
         assert not (return_labels and return_cats), msg
         self.downsample_size = downsample_size # tuple with (h,w) for image size
+        self.last_only = last_only # Return last image repeated seq_len times
         # Organize filenames into a list of seqs
         self.labels = []
         self.cats = []
@@ -97,6 +99,10 @@ class CCN(Dataset):
         img_tensor = img_tensor.permute(0,3,1,2) # (len,channels,height,width)
         # Downsample
         img_tensor = F.interpolate(img_tensor,size=self.downsample_size)
+        # Return last image repeated seq_len times for autoencoding
+        if self.last_only:
+            img_tensor = img_tensor[-1,:,:,:].unsqueeze(0)
+            img_tensor = img_tensor.expand(self.seq_len,-1,-1,-1)
         if self.norm:
             img_tensor = img_tensor / 255.
         if self.return_labels:

@@ -39,6 +39,8 @@ parser.add_argument('--test_sources_path',
                     help='Path to test sources hkl file')
 parser.add_argument('--seq_len',type=int,default=10,
                     help='Number of images in each kitti sequence')
+parser.add_argument('--last_only',type=str2bool,default=False,
+                    help='Train on sequences of static (final) images.')
 parser.add_argument('--batch_size', type=int, default=4,
                     help='Samples per batch')
 parser.add_argument('--num_iters', type=int, default=75000,
@@ -142,9 +144,12 @@ def main(args):
         test_data = KITTI(args.test_data_path,args.test_sources_path,
                           args.seq_len)
     elif args.dataset == 'CCN':
-        train_data = CCN(args.train_data_path,args.seq_len)
-        val_data = CCN(args.val_data_path,args.seq_len)
-        test_data = CCN(args.test_data_path,args.seq_len)
+        train_data = CCN(args.train_data_path,args.seq_len,
+                         last_only=args.last_only)
+        val_data = CCN(args.val_data_path,args.seq_len,
+                       last_only=args.last_only)
+        test_data = CCN(args.test_data_path,args.seq_len,
+                        last_only=args.last_only)
     train_loader = DataLoader(train_data,args.batch_size,shuffle=True)
     val_loader = DataLoader(val_data,args.batch_size,shuffle=True)
     test_loader = DataLoader(test_data,args.batch_size,shuffle=True)
