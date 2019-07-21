@@ -204,6 +204,7 @@ def main(args):
         weights.append(weight)
     weights = torch.tensor(weights)
     weights = weights/torch.sum(weights)
+    weights = weights.to(device)
 
     # Loss and optimizer
     loss_fn = nn.CrossEntropyLoss(weights)
