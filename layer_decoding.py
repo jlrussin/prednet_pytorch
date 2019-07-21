@@ -15,6 +15,10 @@ from PredNet import *
 from ConvLSTM import *
 from utils import *
 
+# Things to do:
+#   -Change labels to categories
+#   -Fix bug with X = batch[0] (still a tuple?)
+
 parser = argparse.ArgumentParser()
 # Layer decoding
 parser.add_argument('--aggregate_method', choices=['mean','max','none'],
@@ -152,8 +156,10 @@ def main(args):
 
     # Dataset
     train_data = CCN(args.train_data_path,args.seq_len,return_labels=True)
+    val_data = CCN(args.val_data_path,args.seq_len,return_labels=True)
     test_data = CCN(args.test_data_path,args.seq_len,return_labels=True)
     train_loader = DataLoader(train_data,args.batch_size,shuffle=True)
+    val_loader = DataLoader(val_data,args.batch_size,shuffle=True)
     test_loader = DataLoader(test_data,args.batch_size,shuffle=True)
     label_ns = train_data.label_ns
     n_labels = len(label_ns)
@@ -220,15 +226,18 @@ def main(args):
         for batch in train_loader:
             iter += 1
             # Split sample
+            print("len(batch):", len(batch))
             X = batch[0]
             X = X.to(device)
+            print("len(X):",len(X))
             labels = batch[1]
-            target = torch.tensor([token_to_idx[t] for t in labels])
+            print(labels)
+            target = torch.tensor([token_to_idx[l] for l in labels])
             # Get representations
             optimizer.zero_grad()
             with torch.no_grad():
                 reps = model(X)
-                reps.insert(0,X[-1])
+                reps.insert(0,X[:,-1,:,:,:])
             agg_reps = []
             for rep in reps:
                 agg_rep = aggregate_space(rep,args.aggregate_method)
@@ -309,7 +318,7 @@ def checkpoint(dataloader, model, decoders, device, args):
             target = torch.tensor([token_to_idx[t] for t in labels])
             # Forward
             reps = model(X)
-            reps.insert(0,X[-1])
+            reps.insert(0,X[:,-1,:,:,:])
             # Aggregate
             agg_reps = []
             for rep in reps:
