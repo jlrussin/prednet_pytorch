@@ -230,6 +230,7 @@ def main(args):
             labels = batch[1]
             print(labels)
             target = torch.tensor([token_to_idx[l] for l in labels])
+            target.to(device)
             # Get representations
             optimizer.zero_grad()
             with torch.no_grad():
