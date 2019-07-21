@@ -25,6 +25,8 @@ parser.add_argument('--test_sources_path',
                     help='Path to test sources hkl file')
 parser.add_argument('--seq_len', type=int, default=10,
                     help='Number of images in each kitti sequence')
+parser.add_argument('--last_only',type=str2bool,default=False,
+                    help='Test on sequences of static (final) images.')
 parser.add_argument('--num_seqs', type=int, default=5,
                     help='Number of (random) sequences of predictions to save')
 
@@ -105,7 +107,8 @@ def main(args):
         test_data = KITTI(args.test_data_path,args.test_sources_path,
                           args.seq_len)
     elif args.dataset == 'CCN':
-        test_data = CCN(args.test_data_path,args.seq_len)
+        test_data = CCN(args.test_data_path,args.seq_len,
+                        last_only=args.last_only)
 
     # Load model
     model_out = 'pred' # Always pred to get predicted images
