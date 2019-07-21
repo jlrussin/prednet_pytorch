@@ -336,6 +336,8 @@ def checkpoint(dataloader, token_to_idx, model, decoders, device, args):
         accs = []
         for correct_l in correct_ls:
             accs.append(np.mean(correct_l))
+    for decoder in decoders:
+        decoder.train()
     return accs
 
 if __name__ == '__main__':
