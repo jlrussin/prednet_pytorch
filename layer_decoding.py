@@ -262,19 +262,22 @@ def main(args):
         if epoch_count % args.checkpoint_every == 0 or last_epoch:
             # Train
             print("Checking training accuracy ...")
-            train_accs = checkpoint(train_loader,model,decoders,device,args)
+            train_accs = checkpoint(train_loader,token_to_idx,
+                                    model,decoders,device,args)
             print("Training accuracies are ", train_accs)
             for l,train_acc in enumerate(train_accs):
                 train_acc_data[l].append(train_acc)
             # Validation
             print("Checking validation accuracy ...")
-            val_accs = checkpoint(val_loader,model,decoders,device,args)
+            val_accs = checkpoint(val_loader,token_to_idx,
+                                  model,decoders,device,args)
             print("Validation accuracies are ", val_accs)
             for l,val_acc in enumerate(val_accs):
                 val_acc_data[l].append(val_acc)
             # Test
             print("Checking test accuracy ...")
-            test_accs = checkpoint(test_loader,model,decoders,device,args)
+            test_accs = checkpoint(test_loader,token_to_idx,
+                                   model,decoders,device,args)
             print("Test accuracies are ", test_accs)
             for l,test_acc in enumerate(test_accs):
                 test_acc_data[l].append(test_acc)
@@ -299,7 +302,7 @@ def main(args):
                             pt_path = pt_path + '.pt'
                         torch.save(decoders[l].state_dict(),pt_path)
 
-def checkpoint(dataloader, model, decoders, device, args):
+def checkpoint(dataloader, token_to_idx, model, decoders, device, args):
     for decoder in decoders:
         decoder.eval()
     with torch.no_grad():
