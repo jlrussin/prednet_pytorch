@@ -280,7 +280,7 @@ def correlation(X,Y):
     Y_norm = torch.norm(Y_c,dim=1,keepdim=True)
     X_n = X_c/X_norm
     Y_n = Y_c/Y_norm
-    corr = torch.sum(X_c*Y_c,dim=1)
+    corr = torch.sum(X_n*Y_n,dim=1)
     ave_corr = torch.mean(corr,dim=0)
     return ave_corr
 
