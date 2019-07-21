@@ -16,7 +16,7 @@ conda activate pytorch1.0
 
 echo "Doing layer decoding with PredNet with fc sigmoid tanh with lr 0.0001 on CCN dataset"
 
-python RSA.py \
+python layer_decoding.py \
 --aggregate_method none \
 --weight_decay 0.0 \
 --train_data_path ../data/ccn_images/train/ \
@@ -36,4 +36,4 @@ python RSA.py \
 --out_data_file prednet_fc_sigmoid_tanh_lr0p0001_ccn_none.json \
 --checkpoint_path ../model_weights/train_prednet_fc_sigmoid_tanh_ccn_lr0p0001 \
 --checkpoint_every 2 \
---record_loss_every 200 
+--record_loss_every 200
