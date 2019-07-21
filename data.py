@@ -48,21 +48,27 @@ class KITTI(Dataset):
         return len(self.start_end_idxs)
 
 class CCN(Dataset):
-    def __init__(self,img_dir,seq_len,norm=True,return_labels=False,
+    def __init__(self,img_dir,seq_len,norm=True,
+                 return_labels=False,return_cats=False,
                  downsample_size=(128,128)):
         self.img_dir = img_dir
         self.seq_len = seq_len
         self.norm = norm # normalize pixel values to [0,1]
         self.return_labels = return_labels # return images, labels
+        self.return_cats = return_cats
+        msg = "Can't return labels and cats"
+        assert not (return_labels and return_cats), msg
         self.downsample_size = downsample_size # tuple with (h,w) for image size
         # Organize filenames into a list of seqs
         self.labels = []
+        self.cats = []
         self.fn_seqs = []
         fn_seq = []
         print("Loading files from %s" % img_dir)
         for fn in sorted(os.listdir(img_dir)):
             fn_seq.append(fn)
             split = fn.split('_')
+            cat = split[4]
             if split[4] in ['car','motorcycle']:
                 t = int(split[8])
                 label = split[4] + '_' + split[5] + '_' + split[6]
@@ -72,13 +78,14 @@ class CCN(Dataset):
             if t == seq_len-1:
                 self.fn_seqs.append(fn_seq)
                 self.labels.append(label)
+                self.cats.append(cat)
                 fn_seq = []
-        self.label_ns = {}
-        for label in self.labels:
-            if label not in self.label_ns:
-                self.label_ns[label] = 1
+        self.cat_ns = {}
+        for cat in self.cats:
+            if cat not in self.cat_ns:
+                self.cat_ns[cat] = 1
             else:
-                self.label_ns[label] += 1
+                self.cat_ns[cat] += 1
         #print("Dataset has %d sequences" % len(self.fn_seqs))
 
     def __getitem__(self,index):
@@ -95,6 +102,9 @@ class CCN(Dataset):
         if self.return_labels:
             label = self.labels[index]
             return img_tensor,label
+        elif self.return_cats:
+            cat = self.cats[index]
+            return img_tensor,cat
         else:
             return img_tensor
 

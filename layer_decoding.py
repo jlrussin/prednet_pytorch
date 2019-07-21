@@ -15,10 +15,6 @@ from PredNet import *
 from ConvLSTM import *
 from utils import *
 
-# Things to do:
-#   -Change labels to categories
-#   -Fix bug with X = batch[0] (still a tuple?)
-
 parser = argparse.ArgumentParser()
 # Layer decoding
 parser.add_argument('--aggregate_method', choices=['mean','max','none'],
@@ -155,22 +151,22 @@ def main(args):
     nb_layers = model.nb_layers
 
     # Dataset
-    train_data = CCN(args.train_data_path,args.seq_len,return_labels=True)
-    val_data = CCN(args.val_data_path,args.seq_len,return_labels=True)
-    test_data = CCN(args.test_data_path,args.seq_len,return_labels=True)
+    train_data = CCN(args.train_data_path,args.seq_len,return_cats=True)
+    val_data = CCN(args.val_data_path,args.seq_len,return_cats=True)
+    test_data = CCN(args.test_data_path,args.seq_len,return_cats=True)
     train_loader = DataLoader(train_data,args.batch_size,shuffle=True)
     val_loader = DataLoader(val_data,args.batch_size,shuffle=True)
     test_loader = DataLoader(test_data,args.batch_size,shuffle=True)
-    label_ns = train_data.label_ns
-    n_labels = len(label_ns)
-    print("There are %d labels in the dataset" % n_labels)
+    cat_ns = train_data.cat_ns
+    n_cats = len(cat_ns)
+    print("There are %d categories in the dataset" % n_cats)
 
     # Vocab
-    token_to_idx = {token:i for i,token in enumerate(label_ns.keys())}
+    token_to_idx = {token:i for i,token in enumerate(cat_ns.keys())}
     idx_to_token = {i:token for token,i in token_to_idx.items()}
 
     # Dummy test to get dimension of each decoder
-    X,_ = train_data[0] # don't need the label right now
+    X,_ = train_data[0] # don't need the cat right now
     X = X.unsqueeze(0).to(device) # batch size is 1
     reps = model(X)
     reps.insert(0,X[:,-1,:,:,:]) # insert last image to get dim of pixels
@@ -183,7 +179,7 @@ def main(args):
     # Initialize linear layers
     decoders = []
     for l in range(nb_layers+1): # all layers plus 1 for pixels
-        decoder = nn.Linear(layer_dims[l],n_labels)
+        decoder = nn.Linear(layer_dims[l],n_cats)
         if args.load_decoders_from is not None:
             pt_path = args.load_decoders_from + 'decoder%d' % l
             pt_path = pt_path + '.pt'
@@ -194,12 +190,12 @@ def main(args):
     n_decoders = len(decoders)
 
 
-    # Weight loss by number of samples with each label
+    # Weight loss by number of samples with each cat
     n_samples = len(train_data)
     weights = []
-    for idx in range(n_labels):
+    for idx in range(n_cats):
         token = idx_to_token[idx]
-        n = label_ns[token]
+        n = cat_ns[token]
         weight = n/n_samples
         weights.append(weight)
     weights = torch.tensor(weights)
@@ -228,8 +224,8 @@ def main(args):
             # Split sample
             X = batch[0]
             X = X.to(device)
-            labels = batch[1]
-            target = torch.tensor([token_to_idx[l] for l in labels])
+            cats = batch[1]
+            target = torch.tensor([token_to_idx[l] for l in cats])
             target = target.to(device)
             # Get representations
             optimizer.zero_grad()
@@ -312,8 +308,9 @@ def checkpoint(dataloader, model, decoders, device, args):
             # Split sample
             X = batch[0]
             X = X.to(device)
-            labels = batch[1]
-            target = torch.tensor([token_to_idx[t] for t in labels])
+            cats = batch[1]
+            target = torch.tensor([token_to_idx[t] for t in cats])
+            target = target.to(device)
             # Forward
             reps = model(X)
             reps.insert(0,X[:,-1,:,:,:])
@@ -324,14 +321,14 @@ def checkpoint(dataloader, model, decoders, device, args):
                 agg_reps.append(agg_rep)
             # Decode
             outputs = []
-            for rep,decoder in zip(reps,decoders):
+            for rep,decoder in zip(agg_reps,decoders):
                 output = decoder(rep)
                 outputs.append(output)
             # Compute accuracy
             for l,output in enumerate(outputs):
-                max_labels = torch.argmax(output,dim=1)
-                correct_t = max_labels == target
-                correct_l = correct_t.numpy().tolist()
+                max_cats = torch.argmax(output,dim=1)
+                correct_t = max_cats == target
+                correct_l = correct_t.cpu().numpy().tolist()
                 correct_ls[l] += correct_l
         accs = []
         for correct_l in correct_ls:
