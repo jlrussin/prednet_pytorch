@@ -171,12 +171,11 @@ def main(args):
 
     # Dummy test to get dimension of each decoder
     X,_ = train_data[0] # don't need the label right now
-    X = X.to(device)
+    X = X.unsqueeze(0).to(device) # batch size is 1
     reps = model(X)
-    reps.insert(0,X[-1]) # insert last image to get dim of pixels
+    reps.insert(0,X[:,-1,:,:,:]) # insert last image to get dim of pixels
     layer_dims = []
     for rep in reps:
-        rep = rep.unsqueeze(0) # batch size is 1
         agg_rep = aggregate_space(rep,args.aggregate_method)
         dim = agg_rep.shape[1]
         layer_dims.append(dim)
@@ -226,10 +225,8 @@ def main(args):
         for batch in train_loader:
             iter += 1
             # Split sample
-            print("len(batch):", len(batch))
             X = batch[0]
             X = X.to(device)
-            print("len(X):",len(X))
             labels = batch[1]
             print(labels)
             target = torch.tensor([token_to_idx[l] for l in labels])
