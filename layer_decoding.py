@@ -27,11 +27,14 @@ parser.add_argument('--load_decoders_from', default=None,
 
 # Training data
 parser.add_argument('--train_data_path',
-                    default='../data/kitti_data/X_train.hkl',
-                    help='Path to training images hkl file')
-parser.add_argument('--test_data_path',
                     default='../data/ccn_images/train/',
-                    help='Path to ccn image directory to test')
+                    help='Path to training images')
+parser.add_argument('--val_data_path',
+                    default='../data/ccn_images/val/',
+                    help='Path to validation images')
+parser.add_argument('--test_data_path',
+                    default='../data/ccn_images/test/',
+                    help='Path to test images')
 parser.add_argument('--seq_len', type=int, default=8,
                     help='Number of images in each ccn sequence')
 parser.add_argument('--batch_size', type=int, default=4,
