@@ -2,7 +2,7 @@
 import os
 import argparse
 import numpy as np
-import hickle as hkl
+import json
 
 import torch
 import torch.nn as nn
