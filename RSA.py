@@ -257,7 +257,7 @@ def main(args):
                 X = batch[0].to(device)
                 # Get representations
                 reps = model(X) # list of reps, one for each layer
-                pixels = X[-1] # Use last image to compare to RGB reps
+                pixels = X[:,-1,:,:,:] # Use last image to compare to RGB reps
                 # Aggregate across space
                 agg_pixels = aggregate_space(pixels,args.aggregate_method)
                 agg_reps = [agg_pixels] # first layer is pixels
