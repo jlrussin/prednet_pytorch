@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH -p local
 #SBATCH -A ecortex
-#SBATCH --qos=preemptlong
+#SBATCH --qos=nonpreemptlong
 #SBATCH --mem=32G
 #SBATCH --time=3:00:00
 #SBATCH --gres=gpu:1
