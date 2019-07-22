@@ -20,7 +20,7 @@ gpus=$(echo $CUDA_VISIBLE_DEVICES | tr "," "\n")
 for gpu in $gpus
 do
 echo "Setting fan for" $gpu "to full"
-nvida_fancontrol full $gpu
+nvidia_fancontrol full $gpu
 done
 
 sleep 10m
@@ -28,5 +28,5 @@ sleep 10m
 for gpu in $gpus
 do
 echo "Setting fan for " $gpu "back to auto"
-nvida_fancontrol auto $gpu
+nvidia_fancontrol auto $gpu
 done
