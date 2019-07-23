@@ -300,6 +300,9 @@ def main(args):
                             pt_path = args.checkpoint_path[:-3]
                             pt_path = pt_path + 'decoder%d' % l
                             pt_path = pt_path + '.pt'
+                        else:
+                            pt_path = args.checkpoint_path + 'decoder%d' % l
+                            pt_path = pt_path + '.pt'
                         torch.save(decoders[l].state_dict(),pt_path)
 
 def checkpoint(dataloader, token_to_idx, model, decoders, device, args):
