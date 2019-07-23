@@ -303,6 +303,7 @@ def main(args):
                         else:
                             pt_path = args.checkpoint_path + 'decoder%d' % l
                             pt_path = pt_path + '.pt'
+                        print("Saving weights to %s" % pt_path)
                         torch.save(decoders[l].state_dict(),pt_path)
 
 def checkpoint(dataloader, token_to_idx, model, decoders, device, args):
