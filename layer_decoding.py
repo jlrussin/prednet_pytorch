@@ -183,7 +183,7 @@ def main(args):
         if args.load_decoders_from is not None:
             pt_path = args.load_decoders_from + 'decoder%d' % l
             pt_path = pt_path + '.pt'
-            decoder.load_state_dict(torch.load(args.load_decoders_from))
+            decoder.load_state_dict(torch.load(pt_path))
         decoder = decoder.to(device)
         decoder.train()
         decoders.append(decoder)
