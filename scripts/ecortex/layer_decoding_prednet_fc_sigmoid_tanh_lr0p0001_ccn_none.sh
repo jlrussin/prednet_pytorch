@@ -19,6 +19,7 @@ echo "Doing layer decoding with PredNet with fc sigmoid tanh with lr 0.0001 on C
 python layer_decoding.py \
 --aggregate_method none \
 --weight_decay 0.0 \
+--load_decoders_from ../model_weights/train_prednet_fc_sigmoid_tanh_ccn_lr0p0001 \
 --train_data_path ../data/ccn_images/train/ \
 --val_data_path ../data/ccn_images/val/ \
 --test_data_path ../data/ccn_images/test/ \
