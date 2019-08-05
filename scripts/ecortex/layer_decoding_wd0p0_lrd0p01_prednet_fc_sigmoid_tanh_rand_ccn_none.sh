@@ -20,8 +20,8 @@ echo $gpu
 nvidia_fancontrol full $gpu
 done
 
-echo "Doing layer decoding with PredNet with fc sigmoid tanh with lr 0.0001 on CCN dataset"
-echo "Decoder learning rate: 0.01"
+echo "Doing layer decoding with PredNet with fc sigmoid tanh with random weights on CCN dataset"
+echo "Decoder learning rate: 0.01"s
 echo "Decoder weight decay: 0.0"
 
 python layer_decoding.py \
