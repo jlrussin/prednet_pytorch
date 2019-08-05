@@ -38,11 +38,11 @@ python layer_decoding.py \
 --LSTM_c_act tanh \
 --bias True \
 --FC True \
---load_weights_from ../model_weights/train_prednet_fc_sigmoid_tanh_ccn_lr0p0001.pt \
+--load_weights_from ../model_weights/train_prednet_fc_sigmoid_tanh_ccn_lr0p0001_lo.pt \ \
 --learning_rate 0.01 \
 --results_dir ../results/layer_decoding/ \
---out_data_file wd0p0_lrd0p01_prednet_fc_sigmoid_tanh_lr0p0001_ccn_none.json \
---checkpoint_path ../model_weights/train_wd0p0_lrd0p01_prednet_fc_sigmoid_tanh_ccn_lr0p0001 \
+--out_data_file wd0p0_lrd0p01_prednet_fc_sigmoid_tanh_lr0p0001_lo_ccn_none.json \
+--checkpoint_path ../model_weights/train_wd0p0_lrd0p01_prednet_fc_sigmoid_tanh_lo_ccn_lr0p0001 \
 --checkpoint_every 2 \
 --record_loss_every 200
 
