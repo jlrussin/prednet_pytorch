@@ -20,8 +20,8 @@ echo $gpu
 nvidia_fancontrol full $gpu
 done
 
-echo "Doing layer decoding with PredNet with fc sigmoid tanh with random weights on CCN dataset"
-echo "Decoder learning rate: 0.01"
+echo "Doing layer decoding with PredNet with fc sigmoid tanh with lr 0.0001 on CCN dataset"
+echo "Decoder learning rate: 0.0001"
 echo "Decoder weight decay: 0.0"
 
 python layer_decoding.py \
@@ -32,16 +32,16 @@ python layer_decoding.py \
 --test_data_path ../data/ccn_images/test/ \
 --seq_len 8 \
 --batch_size 8 \
---num_iters 100000 \
+--num_iters 200000 \
 --model_type PredNet \
 --LSTM_act sigmoid \
 --LSTM_c_act tanh \
 --bias True \
 --FC True \
---learning_rate 0.01 \
+--learning_rate 0.0001 \
 --results_dir ../results/layer_decoding/ \
---out_data_file wd0p0_lrd0p01_prednet_fc_sigmoid_tanh_rand_ccn_none.json \
---checkpoint_path ../model_weights/train_wd0p0_lrd0p01_prednet_fc_sigmoid_tanh_ccn_rand \
+--out_data_file wd0p0_lrd0p0001_prednet_fc_sigmoid_tanh_rand_ccn_none.json \
+--checkpoint_path ../model_weights/train_wd0p0_lrd0p0001_prednet_fc_sigmoid_tanh_ccn_rand \
 --checkpoint_every 2 \
 --record_loss_every 200
 

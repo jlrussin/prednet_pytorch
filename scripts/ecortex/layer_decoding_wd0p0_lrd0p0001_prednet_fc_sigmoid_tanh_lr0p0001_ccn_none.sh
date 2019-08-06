@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#SBATCH -p localHigh
+#SBATCH -p localLimited
 #SBATCH -A ecortex
 #SBATCH --mem=32G
 #SBATCH --time=48:00:00
@@ -32,7 +32,7 @@ python layer_decoding.py \
 --test_data_path ../data/ccn_images/test/ \
 --seq_len 8 \
 --batch_size 8 \
---num_iters 100000 \
+--num_iters 200000 \
 --model_type PredNet \
 --LSTM_act sigmoid \
 --LSTM_c_act tanh \
