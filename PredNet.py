@@ -228,7 +228,8 @@ class PredNet(nn.Module):
                  A_kernel_sizes,Ahat_kernel_sizes,R_kernel_sizes,
                  use_satlu,pixel_max,Ahat_act,satlu_act,error_act,
                  LSTM_act,LSTM_c_act,bias=True,
-                 use_1x1_out=True,FC=False,output='error',device='cpu'):
+                 use_1x1_out=True,FC=False,send_acts=False,output='error',
+                 device='cpu'):
         super(PredNet,self).__init__()
         self.in_channels = in_channels
         self.stack_sizes = stack_sizes
@@ -246,6 +247,7 @@ class PredNet(nn.Module):
         self.bias = bias
         self.use_1x1_out=use_1x1_out
         self.FC = FC # use fully connected ConvLSTM
+        self.send_acts = send_acts # send A_t rather than E_t
         self.output = output
         self.device = device
 
@@ -280,7 +282,10 @@ class PredNet(nn.Module):
         # A cells: conv + ReLU + MaxPool
         A_layers = [None]
         for l in range(1,self.nb_layers): # First A layer is input
-            in_channels = 2*stack_sizes[l-1]
+            if not self.send_acts:
+                in_channels = 2*stack_sizes[l-1] # E layer doubles channels
+            else:
+                in_channels = stack_sizes[l-1] # input will be A_t, not E_t
             out_channels = stack_sizes[l]
             conv_kernel_size = A_kernel_sizes[l-1]
             cell = ACell(in_channels,out_channels,
@@ -306,7 +311,8 @@ class PredNet(nn.Module):
         self.Ahat_layers = nn.ModuleList(Ahat_layers)
 
         # E cells: subtract, ReLU, cat
-        self.E_layer = ECell(error_act) # general: same for all layers
+        if not self.send_acts:
+            self.E_layer = ECell(error_act) # general: same for all layers
 
     def forward(self,X):
         # Get initial states
@@ -350,9 +356,12 @@ class PredNet(nn.Module):
                 E_t[l] = self.E_layer(A_t,Ahat_t)
 
                 # Compute A of next layer
+                A_layer = self.A_layers[l+1]
                 if l < self.nb_layers-1:
-                    A_layer = self.A_layers[l+1]
-                    A_t = A_layer(E_t[l])
+                    if not self.send_acts:
+                        A_t = A_layer(E_t[l])
+                    else:
+                        A_t = A_layer(A_t) # Send activations rather than errors
 
             # Update
             (H_tm1,C_tm1),E_tm1 = (H_t,C_t),E_t

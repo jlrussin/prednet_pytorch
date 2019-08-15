@@ -83,6 +83,9 @@ parser.add_argument('--error_act', default='relu',
 parser.add_argument('--use_1x1_out', type=str2bool, default=False,
                     help='Boolean indicating whether to use 1x1 conv layer' +
                          'for output of ConvLSTM cells')
+parser.add_argument('--send_acts', type=str2bool, default=False,
+                    help='Boolean indicating whether to send activities' +
+                         'rather than errors')
 # Hyperparameters for ConvLSTM
 parser.add_argument('--hidden_channels', type=int, default=192,
                     help='Number of channels in hidden states of ConvLSTM')
