@@ -311,8 +311,7 @@ class PredNet(nn.Module):
         self.Ahat_layers = nn.ModuleList(Ahat_layers)
 
         # E cells: subtract, ReLU, cat
-        if not self.send_acts:
-            self.E_layer = ECell(error_act) # general: same for all layers
+        self.E_layer = ECell(error_act) # general: same for all layers
 
     def forward(self,X):
         # Get initial states
