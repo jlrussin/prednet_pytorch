@@ -355,8 +355,8 @@ class PredNet(nn.Module):
                 E_t[l] = self.E_layer(A_t,Ahat_t)
 
                 # Compute A of next layer
-                A_layer = self.A_layers[l+1]
                 if l < self.nb_layers-1:
+                    A_layer = self.A_layers[l+1]
                     if not self.send_acts:
                         A_t = A_layer(E_t[l])
                     else:
