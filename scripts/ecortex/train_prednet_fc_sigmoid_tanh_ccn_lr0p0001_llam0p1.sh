@@ -22,7 +22,7 @@ done
 
 echo "Training PredNet with fc, sigmoid, tanh on CCN dataset"
 echo "Learning rate is 0.0001, no steps in scheduler"
-echo "Layer lambdas: 1.0 1.0 1.0 1.0"
+echo "Layer lambdas: 0.1 0.1 0.1 0.1"
 
 python train.py \
 --dataset CCN \
