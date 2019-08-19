@@ -30,7 +30,6 @@ python get_predicted_images.py \
 --LSTM_c_act tanh \
 --bias True \
 --FC True \
---send_acts True \
 --load_weights_from ../model_weights/train_prednet_fc_sigmoid_tanh_ccn_lr0p0001_llam1p0.pt \
 --results_dir ../results/images/fc_sigmoid_tanh_ccn_lr0p0001_llam1p0 \
 --out_data_file prednet_fc_sigmoid_tanh_ccn_lr0p0001_llam1p0
