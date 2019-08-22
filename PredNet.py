@@ -233,6 +233,7 @@ class PredNet(nn.Module):
                  use_satlu,pixel_max,Ahat_act,satlu_act,error_act,
                  LSTM_act,LSTM_c_act,bias=True,
                  use_1x1_out=True,FC=False,send_acts=False,no_ER=False,
+                 RAhat=False,
                  output='error',device='cpu'):
         super(PredNet,self).__init__()
         self.in_channels = in_channels
@@ -253,6 +254,7 @@ class PredNet(nn.Module):
         self.FC = FC # use fully connected ConvLSTM
         self.send_acts = send_acts # send A_t rather than E_t
         self.no_ER = no_ER # no connection between E_l and R_l
+        self.RAhat = RAhat # extra connection between R_{l+1} and A_hat_{l}
         self.output = output
         self.device = device
 
@@ -304,7 +306,10 @@ class PredNet(nn.Module):
         # A_hat cells: conv + ReLU
         Ahat_layers = []
         for l in range(self.nb_layers):
-            in_channels = R_stack_sizes[l]
+            if RAhat:
+                in_channels = R_stack_sizes[l] + R_stack_sizes[l+1]
+            else:
+                in_channels = R_stack_sizes[l]
             out_channels = stack_sizes[l]
             conv_kernel_size = Ahat_kernel_sizes[l]
             if self.use_satlu and l == 0:
@@ -354,7 +359,13 @@ class PredNet(nn.Module):
             for l in range(self.nb_layers):
                 # Compute Ahat
                 Ahat_layer = self.Ahat_layers[l]
-                Ahat_t = Ahat_layer(R_t[l])
+                if self.RAhat:
+                    target_size = (R_t[l].shape[2],R_t[l].shape[3])
+                    R_up = F.interpolate(R_t[l+1],target_size)
+                    Ahat_input = torch.cat((R_t[l],R_up),dim=1)
+                else:
+                    Ahat_input = R_t[l]
+                Ahat_t = Ahat_layer(Ahat_input)
                 if self.output == 'pred':
                     if l == 0 and t > 0:
                         outputs.append(Ahat_t)

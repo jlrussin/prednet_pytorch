@@ -82,6 +82,9 @@ parser.add_argument('--send_acts', type=str2bool, default=False,
 parser.add_argument('--no_ER', type=str2bool, default=False,
                     help='Boolean indicating whether to ablate connection' +
                          'between E_l and R_l on all but last layer')
+parser.add_argument('--RAhat', type=str2bool, default=False,
+                    help='Boolean indicating whether to add connection' +
+                         'between R_lp1 and Ahat_l')
 # Hyperparameters for ConvLSTM
 parser.add_argument('--hidden_channels', type=int, default=192,
                     help='Number of channels in hidden states of ConvLSTM')
@@ -233,7 +236,7 @@ def main(args):
                     args.Ahat_act,args.satlu_act,args.error_act,
                     args.LSTM_act,args.LSTM_c_act,args.bias,
                     args.use_1x1_out,args.FC,args.send_acts,args.no_ER,
-                    model_out,device)
+                    args.RAhat,model_out,device)
     if args.load_weights_from is not None:
         model.load_state_dict(torch.load(args.load_weights_from))
     model.to(device)
