@@ -22,7 +22,7 @@ class RCell(nn.Module):
     """
     def __init__(self, in_channels, hidden_channels, kernel_size,
                  LSTM_act, LSTM_c_act, is_last, bias=True, use_out=True,
-                 FC=False, no_ER):
+                 FC=False, no_ER=False):
         super(RCell, self).__init__()
         self.in_channels = in_channels
         self.hidden_channels = hidden_channels
@@ -232,7 +232,7 @@ class PredNet(nn.Module):
                  A_kernel_sizes,Ahat_kernel_sizes,R_kernel_sizes,
                  use_satlu,pixel_max,Ahat_act,satlu_act,error_act,
                  LSTM_act,LSTM_c_act,bias=True,
-                 use_1x1_out=True,FC=False,send_acts=False,no_ER,
+                 use_1x1_out=True,FC=False,send_acts=False,no_ER=False,
                  output='error',device='cpu'):
         super(PredNet,self).__init__()
         self.in_channels = in_channels
