@@ -86,6 +86,9 @@ parser.add_argument('--use_1x1_out', type=str2bool, default=False,
 parser.add_argument('--send_acts', type=str2bool, default=False,
                     help='Boolean indicating whether to send activities' +
                          'rather than errors')
+parser.add_argument('--no_ER', type=str2bool, default=False,
+                    help='Boolean indicating whether to ablate connection' +
+                         'between E_l and R_l on all but last layer')
 # Hyperparameters for ConvLSTM
 parser.add_argument('--hidden_channels', type=int, default=192,
                     help='Number of channels in hidden states of ConvLSTM')

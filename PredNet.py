@@ -22,7 +22,7 @@ class RCell(nn.Module):
     """
     def __init__(self, in_channels, hidden_channels, kernel_size,
                  LSTM_act, LSTM_c_act, is_last, bias=True, use_out=True,
-                 FC=False):
+                 FC=False, no_ER):
         super(RCell, self).__init__()
         self.in_channels = in_channels
         self.hidden_channels = hidden_channels
@@ -31,6 +31,7 @@ class RCell(nn.Module):
         self.bias = bias
         self.use_out = use_out
         self.FC = FC # use fully connected ConvLSTM
+        self.no_ER = no_ER
 
         # Activations
         self.LSTM_act = get_activation(LSTM_act)
@@ -89,7 +90,10 @@ class RCell(nn.Module):
         if not self.is_last:
             target_size = (E.shape[2],E.shape[3])
             R_up = F.interpolate(R_lp1,target_size)
-            x_t = torch.cat((E,R_up),dim=1) # cat on channel dim
+            if not self.no_ER:
+                x_t = torch.cat((E,R_up),dim=1) # cat on channel dim
+            else:
+                x_t = R_up
         else:
             x_t = E
 
@@ -228,8 +232,8 @@ class PredNet(nn.Module):
                  A_kernel_sizes,Ahat_kernel_sizes,R_kernel_sizes,
                  use_satlu,pixel_max,Ahat_act,satlu_act,error_act,
                  LSTM_act,LSTM_c_act,bias=True,
-                 use_1x1_out=True,FC=False,send_acts=False,output='error',
-                 device='cpu'):
+                 use_1x1_out=True,FC=False,send_acts=False,no_ER,
+                 output='error',device='cpu'):
         super(PredNet,self).__init__()
         self.in_channels = in_channels
         self.stack_sizes = stack_sizes
@@ -248,6 +252,7 @@ class PredNet(nn.Module):
         self.use_1x1_out=use_1x1_out
         self.FC = FC # use fully connected ConvLSTM
         self.send_acts = send_acts # send A_t rather than E_t
+        self.no_ER = no_ER # no connection between E_l and R_l
         self.output = output
         self.device = device
 
@@ -270,12 +275,15 @@ class PredNet(nn.Module):
                 in_channels = 2*stack_sizes[l]
             else:
                 is_last = False
-                in_channels = 2*stack_sizes[l] + R_stack_sizes[l+1]
+                if not self.no_ER:
+                    in_channels = 2*stack_sizes[l] + R_stack_sizes[l+1]
+                else:
+                    in_channels = R_stack_sizes[l+1]
             out_channels = R_stack_sizes[l]
             kernel_size = R_kernel_sizes[l]
             cell = RCell(in_channels,out_channels,kernel_size,
                          LSTM_act,LSTM_c_act,
-                         is_last,self.bias,use_1x1_out,FC)
+                         is_last,self.bias,use_1x1_out,FC,no_ER)
             R_layers.append(cell)
         self.R_layers = nn.ModuleList(R_layers)
 
@@ -337,7 +345,7 @@ class PredNet(nn.Module):
                                                      (H_tm1[l],C_tm1[l]))
                 else:
                     R_t[l],(H_t[l],C_t[l]) = R_layer(E_tm1[l],R_t[l+1],
-                                                     (H_tm1[l],C_tm1[l]))
+                                                    (H_tm1[l],C_tm1[l]))
             if self.output == 'rep':
                 if t == seq_len - 1: # only return reps for last time step
                     outputs = R_t
