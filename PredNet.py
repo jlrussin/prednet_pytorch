@@ -264,7 +264,7 @@ class PredNet(nn.Module):
 
         # local gradients means no convolution in A, stack sizes is fixed
         if local_grad:
-            stack_sizes = [2**(s+1) for s in range(len(stack_sizes))]
+            stack_sizes = [3*(2**(s)) for s in range(len(stack_sizes))]
             self.stack_sizes = stack_sizes
 
         # Make sure consistent number of layers
@@ -380,7 +380,7 @@ class PredNet(nn.Module):
             for l in range(self.nb_layers):
                 # Compute Ahat
                 Ahat_layer = self.Ahat_layers[l]
-                if self.RAhat:
+                if self.RAhat and (l != (self.nb_layers-1)):
                     target_size = (R_t[l].shape[2],R_t[l].shape[3])
                     R_up = F.interpolate(R_t[l+1],target_size)
                     Ahat_input = torch.cat((R_t[l],R_up),dim=1)
