@@ -139,7 +139,7 @@ class RCell(nn.Module):
 # A cells = [Conv,ReLU,MaxPool]
 class ACell(nn.Module):
     def __init__(self,in_channels,out_channels,
-                 conv_kernel_size,conv_bias):
+                 conv_kernel_size,conv_bias,no_conv):
         super(ACell,self).__init__()
 
         # Hyperparameters
@@ -147,29 +147,32 @@ class ACell(nn.Module):
         self.out_channels = out_channels
         self.conv_kernel_size = conv_kernel_size
         self.conv_bias = conv_bias
-        conv_stride = 1 # always 1 for simplicity
-        _conv_pad = 0 # padding done manually
-        conv_dilation = 1 # always 1 for simplicity
-        conv_groups = 1 # always 1 for simplicity
-        pool_kernel_size = 2 # always 2 for simplicity
+        self.no_conv = no_conv
 
-        # Parameters
-        self.conv =  nn.Conv2d(in_channels,out_channels,
-                               conv_kernel_size,conv_stride,
-                               _conv_pad,conv_dilation,conv_groups,
-                               conv_bias)
-        self.relu = nn.ReLU()
+        if not no_conv:
+            conv_stride = 1 # always 1 for simplicity
+            _conv_pad = 0 # padding done manually
+            conv_dilation = 1 # always 1 for simplicity
+            conv_groups = 1 # always 1 for simplicity
+            pool_kernel_size = 2 # always 2 for simplicity
+            self.conv =  nn.Conv2d(in_channels,out_channels,
+                                   conv_kernel_size,conv_stride,
+                                   _conv_pad,conv_dilation,conv_groups,
+                                   conv_bias)
+            self.relu = nn.ReLU()
         self.max_pool = nn.MaxPool2d(pool_kernel_size)
 
     def forward(self,E_lm1):
-        # Manual padding to keep H,W the same
-        in_height = E_lm1.shape[2]
-        in_width = E_lm1.shape[3]
-        padding = get_pad_same(in_height,in_width,self.conv_kernel_size)
-        E_lm1 = F.pad(E_lm1,padding)
-        # Compute A
-        A = self.conv(E_lm1)
-        A = self.relu(A)
+        if not self.no_conv:
+            # Manual padding to keep H,W the same
+            in_height = E_lm1.shape[2]
+            in_width = E_lm1.shape[3]
+            padding = get_pad_same(in_height,in_width,self.conv_kernel_size)
+            E_lm1 = F.pad(E_lm1,padding)
+            A = self.conv(E_lm1)
+            A = self.relu(A)
+        else:
+            A = E_lm1
         A = self.max_pool(A)
         return A
 
@@ -233,7 +236,7 @@ class PredNet(nn.Module):
                  use_satlu,pixel_max,Ahat_act,satlu_act,error_act,
                  LSTM_act,LSTM_c_act,bias=True,
                  use_1x1_out=True,FC=False,send_acts=False,no_ER=False,
-                 RAhat=False,
+                 RAhat=False,local_grad=False,
                  output='error',device='cpu'):
         super(PredNet,self).__init__()
         self.in_channels = in_channels
@@ -255,8 +258,14 @@ class PredNet(nn.Module):
         self.send_acts = send_acts # send A_t rather than E_t
         self.no_ER = no_ER # no connection between E_l and R_l
         self.RAhat = RAhat # extra connection between R_{l+1} and A_hat_{l}
+        self.local_grad = local_grad # gradients only broadcasted within layers
         self.output = output
         self.device = device
+
+        # local gradients means no convolution in A, stack sizes is fixed
+        if local_grad:
+            stack_sizes = [2**(s+1) for s in range(len(stack_sizes))]
+            self.stack_sizes = stack_sizes
 
         # Make sure consistent number of layers
         self.nb_layers = len(stack_sizes)
@@ -268,6 +277,11 @@ class PredNet(nn.Module):
         assert len(Ahat_kernel_sizes) == self.nb_layers, msg
         msg = "len(R_kernel_sizes) must equal len(stack_sizes)"
         assert len(R_kernel_sizes) == self.nb_layers, msg
+        # Make sure not doing inconsistent ablations
+        msg = "Can't do send_acts and local_grad"
+        assert not (send_acts and local_grad), msg
+        msg = "Can't do RAhat and local_grad"
+        assert not (RAhat and local_grad), msg
 
         # R cells: convolutional LSTM
         R_layers = []
@@ -290,6 +304,7 @@ class PredNet(nn.Module):
         self.R_layers = nn.ModuleList(R_layers)
 
         # A cells: conv + ReLU + MaxPool
+        no_conv = local_grad # no convolutional layer if using local_grad
         A_layers = [None]
         for l in range(1,self.nb_layers): # First A layer is input
             if not self.send_acts:
@@ -299,14 +314,14 @@ class PredNet(nn.Module):
             out_channels = stack_sizes[l]
             conv_kernel_size = A_kernel_sizes[l-1]
             cell = ACell(in_channels,out_channels,
-                         conv_kernel_size,bias)
+                         conv_kernel_size,bias,no_conv)
             A_layers.append(cell)
         self.A_layers = nn.ModuleList(A_layers)
 
         # A_hat cells: conv + ReLU
         Ahat_layers = []
         for l in range(self.nb_layers):
-            if RAhat:
+            if RAhat and (l != (self.nb_layers-1)): # Last Ahat is unchanged
                 in_channels = R_stack_sizes[l] + R_stack_sizes[l+1]
             else:
                 in_channels = R_stack_sizes[l]
@@ -349,8 +364,14 @@ class PredNet(nn.Module):
                     R_t[l],(H_t[l],C_t[l]) = R_layer(E_tm1[l],None,
                                                      (H_tm1[l],C_tm1[l]))
                 else:
-                    R_t[l],(H_t[l],C_t[l]) = R_layer(E_tm1[l],R_t[l+1],
-                                                    (H_tm1[l],C_tm1[l]))
+                    if not local_grad:
+                        R_t[l],(H_t[l],C_t[l]) = R_layer(E_tm1[l],
+                                                         R_t[l+1],
+                                                         (H_tm1[l],C_tm1[l]))
+                    else:
+                        R_t[l],(H_t[l],C_t[l]) = R_layer(E_tm1[l],
+                                                         R_t[l+1].detach(),
+                                                         (H_tm1[l],C_tm1[l]))
             if self.output == 'rep':
                 if t == seq_len - 1: # only return reps for last time step
                     outputs = R_t
@@ -377,7 +398,10 @@ class PredNet(nn.Module):
                 if l < self.nb_layers-1:
                     A_layer = self.A_layers[l+1]
                     if not self.send_acts:
-                        A_t = A_layer(E_t[l])
+                        if not self.local_grad:
+                            A_t = A_layer(E_t[l])
+                        else:
+                            A_t = A_layer(E_t[l].detach())
                     else:
                         A_t = A_layer(A_t) # Send activations rather than errors
 
