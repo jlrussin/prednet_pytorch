@@ -92,6 +92,9 @@ parser.add_argument('--no_ER', type=str2bool, default=False,
 parser.add_argument('--RAhat', type=str2bool, default=False,
                     help='Boolean indicating whether to add connection' +
                          'between R_lp1 and Ahat_l')
+parser.add_argument('--local_grad', type=str2bool, default=False,
+                    help='Boolean indicating whether to restrict gradients ' +
+                         'to flow locally (within each layer)')
 # Hyperparameters for ConvLSTM
 parser.add_argument('--hidden_channels', type=int, default=192,
                     help='Number of channels in hidden states of ConvLSTM')
