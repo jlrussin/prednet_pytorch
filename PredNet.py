@@ -154,12 +154,12 @@ class ACell(nn.Module):
             _conv_pad = 0 # padding done manually
             conv_dilation = 1 # always 1 for simplicity
             conv_groups = 1 # always 1 for simplicity
-            pool_kernel_size = 2 # always 2 for simplicity
             self.conv =  nn.Conv2d(in_channels,out_channels,
                                    conv_kernel_size,conv_stride,
                                    _conv_pad,conv_dilation,conv_groups,
                                    conv_bias)
             self.relu = nn.ReLU()
+        pool_kernel_size = 2 # always 2 for simplicity
         self.max_pool = nn.MaxPool2d(pool_kernel_size)
 
     def forward(self,E_lm1):
@@ -364,7 +364,7 @@ class PredNet(nn.Module):
                     R_t[l],(H_t[l],C_t[l]) = R_layer(E_tm1[l],None,
                                                      (H_tm1[l],C_tm1[l]))
                 else:
-                    if not local_grad:
+                    if not self.local_grad:
                         R_t[l],(H_t[l],C_t[l]) = R_layer(E_tm1[l],
                                                          R_t[l+1],
                                                          (H_tm1[l],C_tm1[l]))
