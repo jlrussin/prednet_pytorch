@@ -20,9 +20,8 @@ echo "Setting fan for" $gpu "to full"
 nvidia_fancontrol full $gpu
 done
 
-echo "Training PredNet with fc, sigmoid, tanh on CCN dataset"
+echo "Training PredNet with fc, sigmoid, tanh, local_grad on CCN dataset"
 echo "Learning rate is 0.0001, no steps in scheduler"
-echo "Layer lambdas: 0.1 0.1 0.1 0.1"
 
 python train.py \
 --dataset CCN \
@@ -37,12 +36,13 @@ python train.py \
 --LSTM_c_act tanh \
 --bias True \
 --FC True \
+--local_grad True \
+--layer_lambdas 1.0 0.1 0.1 0.1 \
 --learning_rate 0.0001 \
 --lr_steps 0 \
---layer_lambdas 1.0 0.1 0.1 0.1 \
 --results_dir ../results/train_results \
---out_data_file train_prednet_fc_sigmoid_tanh_ccn_lr0p0001_llam0p1.json \
---checkpoint_path ../model_weights/train_prednet_fc_sigmoid_tanh_ccn_lr0p0001_llam0p1.pt \
+--out_data_file train_prednet_fc_sigmoid_tanh_lg_ccn_lr0p0001_llam0p1.json \
+--checkpoint_path ../model_weights/train_prednet_fc_sigmoid_tanh_lg_ccn_lr0p0001_llam0p1.pt \
 --checkpoint_every 2 \
 --record_E True \
 --record_loss_every 200

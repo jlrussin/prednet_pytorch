@@ -30,20 +30,21 @@ python train.py \
 --test_data_path ../data/ccn_images/test/ \
 --seq_len 8 \
 --batch_size 8 \
---num_iters 50000 \
+--num_iters 150000 \
 --model_type PredNet \
 --LSTM_act sigmoid \
 --LSTM_c_act tanh \
 --bias True \
 --FC True \
 --local_grad True \
---layer_lambdas 1.0 1.0 1.0 1.0 \
+--layer_lambdas 1.0 0.0 0.0 0.0 \
 --learning_rate 0.0001 \
 --lr_steps 0 \
 --results_dir ../results/train_results \
---out_data_file train_prednet_fc_sigmoid_tanh_lg_ccn_lr0p0001_llam1p0.json \
---checkpoint_path ../model_weights/train_prednet_fc_sigmoid_tanh_lg_ccn_lr0p0001_llam1p0.pt \
+--out_data_file train_prednet_fc_sigmoid_tanh_lg_ccn_lr0p0001_llam0p0.json \
+--checkpoint_path ../model_weights/train_prednet_fc_sigmoid_tanh_lg_ccn_lr0p0001_llam0p0.pt \
 --checkpoint_every 2 \
+--record_E True \
 --record_loss_every 200
 
 for gpu in $gpus

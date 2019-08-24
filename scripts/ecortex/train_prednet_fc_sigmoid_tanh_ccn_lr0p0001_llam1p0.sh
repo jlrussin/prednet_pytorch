@@ -31,7 +31,7 @@ python train.py \
 --test_data_path ../data/ccn_images/test/ \
 --seq_len 8 \
 --batch_size 8 \
---num_iters 50000 \
+--num_iters 150000 \
 --model_type PredNet \
 --LSTM_act sigmoid \
 --LSTM_c_act tanh \
@@ -44,6 +44,7 @@ python train.py \
 --out_data_file train_prednet_fc_sigmoid_tanh_ccn_lr0p0001_llam1p0.json \
 --checkpoint_path ../model_weights/train_prednet_fc_sigmoid_tanh_ccn_lr0p0001_llam1p0.pt \
 --checkpoint_every 2 \
+--record_E True \
 --record_loss_every 200
 
 for gpu in $gpus

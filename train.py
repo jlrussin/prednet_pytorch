@@ -131,6 +131,8 @@ parser.add_argument('--layer_lambdas', type=float,
                          'Length should be equal to number of layers')
 
 # Output options
+parser.add_argument('--record_E', default=False,
+                    help='Record E for each layer')
 parser.add_argument('--results_dir', default='../results/train_results',
                     help='Results subdirectory to save results')
 parser.add_argument('--out_data_file', default='results.json',
@@ -197,9 +199,7 @@ def main(args):
     scheduler = optim.lr_scheduler.StepLR(optimizer,step_size=lrs_step_size,
                                           gamma=0.1)
 
-    # Training loop:
-    iter = 0
-    epoch_count = 0
+    # Stats
     ave_time = 0.0
     loss_data = [] # records loss every args.record_loss_every iters
     train_losses = [] # records mean training loss every checkpoint
@@ -209,6 +209,14 @@ def main(args):
     test_losses = [] # records mean test loss every checkpoint
     test_corrs = [] # records mean test correlation every checkpoint
     best_val_loss = float("inf") # will only save best weights
+    if args.record_E:
+        E_data = {'layer%d' % i:[] for i in range(model.nb_layers)}
+        train_Es = {'layer%d' % i:[] for i in range(model.nb_layers)}
+        val_Es = {'layer%d' % i:[] for i in range(model.nb_layers)}
+        test_Es = {'layer%d' % i:[] for i in range(model.nb_layers)}
+    # Training loop
+    iter = 0
+    epoch_count = 0
     while iter < args.num_iters:
         epoch_count += 1
         for X in train_loader:
@@ -239,6 +247,11 @@ def main(args):
                       'lr:', scheduler.get_lr(),
                       'ave time: ', ave_time)
                 loss_data.append(loss_datapoint)
+                if args.record_E:
+                    E_means = torch.mean(output.detach(),dim=0)
+                    for l in range(model.nb_layers):
+                        E_datapoint = E_means[l].data.item()
+                        E_data['layer%d' % l].append(E_datapoint)
             if iter >= args.num_iters:
                 break
         # Checkpoint
@@ -246,21 +259,39 @@ def main(args):
         if epoch_count % args.checkpoint_every == 0 or last_epoch:
             # Train
             print("Checking training loss...")
-            train_loss,train_corr = checkpoint(train_loader,model,device,args)
+            train_checkpoint = checkpoint(train_loader,model,device,args)
+            if args.record_E:
+                train_loss,train_corr,train_E = train_checkpoint
+                for l in range(model.nb_layers):
+                    train_Es['layer%d' % l].append(train_E[l])
+            else:
+                train_loss,train_corr = train_checkpoint
             print("Training loss is ", train_loss)
             print("Training average correlation is ", train_corr)
             train_losses.append(train_loss)
             train_corrs.append(train_corr)
             # Validation
             print("Checking validation loss...")
-            val_loss,val_corr = checkpoint(val_loader,model,device,args)
+            val_checkpoint = checkpoint(val_loader,model,device,args)
+            if args.record_E:
+                val_loss,val_corr,val_E = val_checkpoint
+                for l in range(model.nb_layers):
+                    val_Es['layer%d' % l].append(val_E[l])
+            else:
+                val_loss,val_corr = val_checkpoint
             print("Validation loss is ", val_loss)
             print("Validation average correlation is ",val_corr)
             val_losses.append(val_loss)
             val_corrs.append(val_corr)
             # Test
             print("Checking test loss...")
-            test_loss,test_corr = checkpoint(test_loader,model,device,args)
+            test_checkpoint = checkpoint(test_loader,model,device,args)
+            if args.record_E:
+                test_loss,test_corr,test_E = test_checkpoint
+                for l in range(model.nb_layers):
+                    test_Es['layer%d' % l].append(test_E[l])
+            else:
+                test_loss,test_corr = test_checkpoint
             print("Test loss is ", test_loss)
             print("Test average correlation is ", test_corr)
             test_losses.append(test_loss)
@@ -275,6 +306,11 @@ def main(args):
                      'val_corrs':val_corrs,
                      'test_mse_losses':test_losses,
                      'test_corrs':test_corrs}
+            if args.record_E:
+                stats['E_data'] = E_data
+                stats['train_Es'] = train_Es
+                stats['val_Es'] = val_Es
+                stats['test_Es'] = test_Es
             results_file_name = '%s/%s' % (args.results_dir,args.out_data_file)
             with open(results_file_name, 'w') as f:
                 json.dump(stats, f)
@@ -311,6 +347,8 @@ def checkpoint(dataloader, model, device, args):
     with torch.no_grad():
         losses = []
         corrs = []
+        if args.record_E:
+            Es = [[] for l in range(model.nb_layers)]
         for X in dataloader:
             # Forward
             X = X.to(device)
@@ -324,10 +362,22 @@ def checkpoint(dataloader, model, device, args):
             corr_datapoint = corr.data.item()
             losses.append(loss_datapoint)
             corrs.append(corr_datapoint)
+            # record E
+            if args.record_E:
+                model.output = 'error'
+                errors = model(X)
+                E_means = torch.mean(errors.detach(),dim=0)
+                for l in range(model.nb_layers):
+                    Es[l].append(E_means[l].data.item())
+                model.output = 'pred'
 
     model.train()
     model.output = model_output # Undo model output change to resume training
-    return np.mean(losses),np.mean(corrs)
+    if args.record_E:
+        mean_Es = [np.mean(Es[l]) for l in range(model.nb_layers)]
+        return np.mean(losses),np.mean(corrs),mean_Es
+    else:
+        return np.mean(losses),np.mean(corrs)
 
 if __name__ == '__main__':
     args = parser.parse_args()
@@ -335,5 +385,8 @@ if __name__ == '__main__':
     start_train_time = time.time()
     print("MKL is available: ", torch.backends.mkl.is_available())
     print("MKL DNN is available: ", torch._C.has_mkldnn)
+    msg = "Must be using PredNet with E loss to record E"
+    if args.record_E:
+        assert args.model_type == 'PredNet' and args.loss == 'E', msg
     main(args)
     print("Total training time: ", time.time() - start_train_time)
