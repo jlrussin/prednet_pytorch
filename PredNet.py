@@ -271,8 +271,9 @@ class PredNet(nn.Module):
         self.nb_layers = len(stack_sizes)
         msg = "len(R_stack_sizes) must equal len(stack_sizes)"
         assert len(R_stack_sizes) == self.nb_layers, msg
-        msg = "len(A_kernel_sizes) must equal len(stack_sizes)"
-        assert len(A_kernel_sizes) == self.nb_layers - 1, msg
+        if self.nb_layers > 1:
+            msg = "len(A_kernel_sizes) must equal len(stack_sizes)"
+            assert len(A_kernel_sizes) == self.nb_layers - 1, msg
         msg = "len(Ahat_kernel_sizes) must equal len(stack_sizes)"
         assert len(Ahat_kernel_sizes) == self.nb_layers, msg
         msg = "len(R_kernel_sizes) must equal len(stack_sizes)"
