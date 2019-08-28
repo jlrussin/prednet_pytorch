@@ -246,7 +246,8 @@ def main(args):
                               args.R_kernel_sizes,args.use_satlu,args.pixel_max,
                               args.Ahat_act,args.satlu_act,args.error_act,
                               args.LSTM_act,args.LSTM_c_act,args.bias,
-                              args.use_1x1_out,args.FC,model_out,device)
+                              args.use_1x1_out,args.FC,args.local_grad,
+                              model_out,device)
     if args.load_weights_from is not None:
         model.load_state_dict(torch.load(args.load_weights_from))
     model.to(device)

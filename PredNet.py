@@ -454,7 +454,7 @@ class MultiConvLSTM(nn.Module):
     def __init__(self,in_channels,R_stack_sizes,R_kernel_sizes,
                  use_satlu,pixel_max,Ahat_act,satlu_act,error_act,
                  LSTM_act,LSTM_c_act,
-                 bias=True,use_1x1_out=False,FC=True,
+                 bias=True,use_1x1_out=False,FC=True,local_grad=False,
                  output='pred',device='cpu'):
         super(MultiConvLSTM,self).__init__()
         self.in_channels = in_channels
@@ -470,6 +470,7 @@ class MultiConvLSTM(nn.Module):
         self.bias = bias
         self.use_1x1_out = use_1x1_out
         self.FC = FC
+        self.local_grad = local_grad
         self.output = output
         self.device = device
 
@@ -545,16 +546,28 @@ class MultiConvLSTM(nn.Module):
                 # Compute R
                 R_layer = self.R_layers[l] # cell
                 if l == 0:
+                    if self.local_grad:
+                        R_tm1_lp1 = R_tm1[l+1].detach()
+                    else:
+                        R_tm1_lp1 = R_tm1[l+1]
                     R_t[l],(H_t[l],C_t[l]) = R_layer(A_t,
-                                                     R_tm1[l+1],
+                                                     R_tm1_lp1,
                                                      (H_tm1[l],C_tm1[l]))
                 elif l < self.nb_layers-1:
-                    R_t_lm1_pooled = self.max_pool(R_t[l-1])
+                    if self.local_grad:
+                        R_tm1_lp1 = R_tm1[l+1].detach()
+                        R_t_lm1_pooled = self.max_pool(R_t[l-1].detach())
+                    else:
+                        R_tm1_lp1 = R_tm1[l+1]
+                        R_t_lm1_pooled = self.max_pool(R_t[l-1])
                     R_t[l],(H_t[l],C_t[l]) = R_layer(R_t_lm1_pooled,
-                                                     R_tm1[l+1],
+                                                     R_tm1_lp1,
                                                      (H_tm1[l],C_tm1[l]))
                 else:
-                    R_t_lm1_pooled = self.max_pool(R_t[l-1])
+                    if self.local_grad:
+                        R_t_lm1_pooled = self.max_pool(R_t[l-1].detach())
+                    else:
+                        R_t_lm1_pooled = self.max_pool(R_t[l-1])
                     R_t[l],(H_t[l],C_t[l]) = R_layer(R_t_lm1_pooled,
                                                      None,
                                                      (H_tm1[l],C_tm1[l]))

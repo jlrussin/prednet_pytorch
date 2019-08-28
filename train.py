@@ -184,7 +184,8 @@ def main(args):
                               args.R_kernel_sizes,args.use_satlu,args.pixel_max,
                               args.Ahat_act,args.satlu_act,args.error_act,
                               args.LSTM_act,args.LSTM_c_act,args.bias,
-                              args.use_1x1_out,args.FC,model_out,device)
+                              args.use_1x1_out,args.FC,args.local_grad,
+                              model_out,device)
     elif args.model_type == 'ConvLSTM':
         model = ConvLSTM(args.in_channels,args.hidden_channels,args.kernel_size,
                          args.LSTM_act,args.LSTM_c_act,args.out_act,
