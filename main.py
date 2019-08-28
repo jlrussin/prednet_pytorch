@@ -47,7 +47,8 @@ parser.add_argument('--num_iters', type=int, default=75000,
                     help='Number of optimizer steps before stopping')
 
 # Models
-parser.add_argument('--model_type', choices=['PredNet','ConvLSTM'],
+parser.add_argument('--model_type', choices=['PredNet','ConvLSTM',
+                                             'MultiConvLSTM'],
                     default='PredNet', help='Type of model to use.')
 # Hyperparameters for PredNet
 parser.add_argument('--stack_sizes', type=int, nargs='+', default=[3,48,96,192],

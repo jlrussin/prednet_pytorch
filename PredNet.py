@@ -448,3 +448,173 @@ class PredNet(nn.Module):
             height = int((height - 2)/2 + 1) # int performs floor
             width = int((width - 2)/2 + 1) # int performs floor
         return (H_0,C_0), E_0
+
+# Multi-layer convolutional LSTM (passes R instead of E between layers)
+class MultiConvLSTM(nn.Module):
+    def __init__(self,in_channels,R_stack_sizes,R_kernel_sizes,
+                 use_satlu,pixel_max,Ahat_act,satlu_act,error_act,
+                 LSTM_act,LSTM_c_act,
+                 bias=True,use_1x1_out=False,FC=True,
+                 output='pred',device='cpu'):
+        super(MultiConvLSTM,self).__init__()
+        self.in_channels = in_channels
+        self.R_stack_sizes = R_stack_sizes
+        self.R_kernel_sizes = R_kernel_sizes
+        self.use_satlu = use_satlu
+        self.pixel_max = pixel_max
+        self.Ahat_act = Ahat_act
+        self.satlu_act = satlu_act
+        self.error_act = error_act
+        self.LSTM_act = LSTM_act
+        self.LSTM_c_act = LSTM_c_act
+        self.bias = bias
+        self.use_1x1_out = use_1x1_out
+        self.FC = FC
+        self.output = output
+        self.device = device
+
+        # Make sure a consistent number of layers was given
+        self.nb_layers = len(R_stack_sizes)
+        msg = "len(R_stack_sizes) must equal len(R_kernel_sizes)"
+        assert len(R_kernel_sizes) == self.nb_layers, msg
+
+        # R cells: convolutional LSTM
+        R_layers = []
+        for l in range(self.nb_layers):
+            if l == 0:
+                is_last = False
+                in_channels = self.in_channels + R_stack_sizes[l+1]
+            elif l < self.nb_layers-1:
+                is_last = False
+                in_channels = R_stack_sizes[l-1] + R_stack_sizes[l+1]
+            elif l == self.nb_layers-1:
+                is_last = True
+                in_channels = R_stack_sizes[l-1]
+            out_channels = R_stack_sizes[l]
+            kernel_size = R_kernel_sizes[l]
+            cell = RCell(in_channels,out_channels,kernel_size,
+                         LSTM_act,LSTM_c_act,is_last,self.bias,
+                         use_1x1_out,FC)
+            R_layers.append(cell)
+        self.R_layers = nn.ModuleList(R_layers)
+
+        # Pooling layers: MaxPool
+        pool_kernel_size = 2
+        self.max_pool = nn.MaxPool2d(pool_kernel_size)
+
+        # A_hat cells: conv + ReLU
+        Ahat_layers = []
+        for l in range(self.nb_layers):
+            in_channels = R_stack_sizes[l]
+            kernel_size = R_kernel_sizes[l]
+            if l == 0:
+                out_channels = self.in_channels # first layer predicts pixels
+                if self.use_satlu:
+                    use_satlu = True
+            else:
+                out_channels = R_stack_sizes[l-1]
+                use_satlu = False
+            cell = AhatCell(in_channels,out_channels,
+                            kernel_size,bias,Ahat_act,satlu_act,
+                            use_satlu,pixel_max)
+            Ahat_layers.append(cell)
+        self.Ahat_layers = nn.ModuleList(Ahat_layers)
+
+        # E cells: subtract, ReLU, cat
+        self.E_layer = ECell(error_act) # general: same for all layers
+
+    def forward(self,X):
+
+        # Get initial states
+        (H_tm1,C_tm1),R_tm1 = self.initialize(X)
+
+        outputs = []
+
+        # Loop through image sequence
+        seq_len = X.shape[1]
+        for t in range(seq_len):
+            A_t = X[:,t,:,:,:] # X dims: (batch,len,channels,height,width)
+            # Initialize list of states with consistent indexing
+            R_t = [None] * self.nb_layers
+            H_t = [None] * self.nb_layers
+            C_t = [None] * self.nb_layers
+            E_t = [None] * self.nb_layers
+
+            # Update layers starting from the bottom
+            for l in range(self.nb_layers):
+                # Compute R
+                R_layer = self.R_layers[l] # cell
+                if l == 0:
+                    R_t[l],(H_t[l],C_t[l]) = R_layer(A_t,
+                                                     R_tm1[l+1],
+                                                     (H_tm1[l],C_tm1[l]))
+                elif l < self.nb_layers-1:
+                    R_t_lm1_pooled = self.max_pool(R_t[l-1])
+                    R_t[l],(H_t[l],C_t[l]) = R_layer(R_t_lm1_pooled,
+                                                     R_tm1[l+1],
+                                                     (H_tm1[l],C_tm1[l]))
+                else:
+                    R_t_lm1_pooled = self.max_pool(R_t[l-1])
+                    R_t[l],(H_t[l],C_t[l]) = R_layer(R_t_lm1_pooled,
+                                                     None,
+                                                     (H_tm1[l],C_tm1[l]))
+                # Compute Ahat
+                Ahat_layer = self.Ahat_layers[l]
+                Ahat_t = Ahat_layer(R_t[l])
+                # Compute E
+                if l == 0:
+                    E_t[l] = self.E_layer(A_t,Ahat_t)
+                else:
+                    E_t[l] = self.E_layer(R_t_lm1_pooled,Ahat_t)
+
+                # Save predictions
+                if self.output == 'pred':
+                    if l == 0 and t > 0:
+                        outputs.append(Ahat_t)
+
+            # Save representations
+            if self.output == 'rep':
+                if t == seq_len - 1: # only return reps for last time step
+                    outputs = R_t
+
+            # Update
+            (H_tm1,C_tm1),R_tm1 = (H_t,C_t),R_t
+            if self.output == 'error':
+                if t > 0:
+                    outputs.append(E_t) # First time step doesn't count
+        # errors and preds returned as tensors
+        if self.output == 'error':
+            outputs_t = torch.zeros(seq_len,self.nb_layers)
+            for t in range(seq_len-1):
+                for l in range(self.nb_layers):
+                    outputs_t[t,l] = torch.mean(outputs[t][l])
+        elif self.output == 'pred':
+            outputs_t = [output.unsqueeze(1) for output in outputs]
+            outputs_t = torch.cat(outputs_t,dim=1) # (batch,len,in_channels,H,W)
+        # reps returned as list of tensors
+        elif self.output == 'rep':
+            outputs_t = outputs
+        return outputs_t
+
+    def initialize(self,X):
+        # input dimensions
+        batch_size = X.shape[0]
+        height = X.shape[3]
+        width = X.shape[4]
+        # get dimensions of E,R for each layer
+        H_0 = []
+        C_0 = []
+        R_0 = []
+        for l in range(self.nb_layers):
+            R_channels = self.R_stack_sizes[l]
+            # All hidden states initialized with zeros
+            Hl = torch.zeros(batch_size,R_channels,height,width).to(self.device)
+            Cl = torch.zeros(batch_size,R_channels,height,width).to(self.device)
+            Rl = torch.zeros(batch_size,R_channels,height,width).to(self.device)
+            H_0.append(Hl)
+            C_0.append(Cl)
+            R_0.append(Rl)
+            # Update dims
+            height = int((height - 2)/2 + 1) # int performs floor
+            width = int((width - 2)/2 + 1) # int performs floor
+        return (H_0,C_0), R_0
