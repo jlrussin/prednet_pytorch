@@ -392,8 +392,9 @@ if __name__ == '__main__':
     start_train_time = time.time()
     print("MKL is available: ", torch.backends.mkl.is_available())
     print("MKL DNN is available: ", torch._C.has_mkldnn)
-    msg = "Must be using PredNet with E loss to record E"
     if args.record_E:
-        assert args.model_type == 'PredNet' and args.loss == 'E', msg
+        msg = "Must be using PredNet with E loss to record E"
+        model_has_E = args.model_type in ['PredNet','MultiConvLSTM']
+        assert model_has_E and args.loss == 'E', msg
     main(args)
     print("Total training time: ", time.time() - start_train_time)
