@@ -17,6 +17,8 @@ parser = argparse.ArgumentParser()
 # Training data
 parser.add_argument('--dataset',choices=['KITTI','CCN'],default='KITTI',
                     help='Dataset to use')
+parser.add_argument('--sanity_check',type=str2bool,default=False,
+                    help='Change last four images - seqs are unpredictable')
 parser.add_argument('--test_data_path',
                     default='../data/kitti_data/X_test.hkl',
                     help='Path to test images hkl file')
@@ -162,7 +164,13 @@ def main(args):
     model.eval()
     with torch.no_grad():
         for i in seq_ids:
-            X = test_data[i].to(device)
+            if args.sanity_check: # Get first part of seq i, second part of i+1
+                X_i = test_data[i]
+                X_ip1 = test_data[(i+1) % args.num_seqs]
+                halfway = args.seq_len//2
+                X = torch.cat((X_i[:halfway],X_ip1[halfway:]),dim=0)
+            else:
+                X = test_data[i].to(device)
             X = X.unsqueeze(0) # Add batch dim
             seq_len = X.shape[1]
             preds = model(X)
