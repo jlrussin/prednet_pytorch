@@ -33,8 +33,8 @@ python get_predicted_images.py \
 --FC True \
 --local_grad True \
 --load_weights_from ../model_weights/train_multiconv_fc_sigmoid_tanh_lg_ccn_lr0p0001_llam1p0.pt \
---results_dir ../results/images/multiconv_sanity_check \
---out_data_file multiconv_sanity_check
+--results_dir ../results/images/multiconv_lg_sanity_check \
+--out_data_file multiconv_lg_sanity_check
 
 for gpu in $gpus
 do
