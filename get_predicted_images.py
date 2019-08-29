@@ -163,10 +163,11 @@ def main(args):
     # Get predicted images
     model.eval()
     with torch.no_grad():
-        for i in seq_ids:
+        for num,i in enumerate(seq_ids):
             if args.sanity_check: # Get first part of seq i, second part of i+1
                 X_i = test_data[i]
-                X_ip1 = test_data[(i+1) % args.num_seqs]
+                next_i = seq_ids[(id+1) % args.num_seqs]
+                X_ip1 = test_data[next_i]
                 halfway = args.seq_len//2
                 X = torch.cat((X_i[:halfway],X_ip1[halfway:]),dim=0)
                 X = X.to(device)
