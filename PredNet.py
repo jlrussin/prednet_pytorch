@@ -530,16 +530,20 @@ class MultiConvLSTM(nn.Module):
         (H_tm1,C_tm1),R_tm1 = self.initialize(X)
 
         outputs = []
+        Ahat_tp1 = [None] * self.nb_layers
 
         # Loop through image sequence
         seq_len = X.shape[1]
         for t in range(seq_len):
-            A_t = X[:,t,:,:,:] # X dims: (batch,len,channels,height,width)
             # Initialize list of states with consistent indexing
             R_t = [None] * self.nb_layers
             H_t = [None] * self.nb_layers
             C_t = [None] * self.nb_layers
             E_t = [None] * self.nb_layers
+            A_t = [None] * self.nb_layers
+            A_t[0] = X[:,t,:,:,:] # first layer predicts pixels
+            if t > 0:
+                Ahat_t = Ahat_tp1 # preds from prev timestep compared to present
 
             # Update layers starting from the bottom
             for l in range(self.nb_layers):
@@ -550,51 +554,48 @@ class MultiConvLSTM(nn.Module):
                         R_tm1_lp1 = R_tm1[l+1].detach()
                     else:
                         R_tm1_lp1 = R_tm1[l+1]
-                    R_t[l],(H_t[l],C_t[l]) = R_layer(A_t,
+                    R_t[l],(H_t[l],C_t[l]) = R_layer(A_t[l],
                                                      R_tm1_lp1,
                                                      (H_tm1[l],C_tm1[l]))
                 elif l < self.nb_layers-1:
                     if self.local_grad:
                         R_tm1_lp1 = R_tm1[l+1].detach()
-                        R_t_lm1_pooled = self.max_pool(R_t[l-1].detach())
+                        A_t[l] = self.max_pool(R_t[l-1].detach())
                     else:
                         R_tm1_lp1 = R_tm1[l+1]
-                        R_t_lm1_pooled = self.max_pool(R_t[l-1])
-                    R_t[l],(H_t[l],C_t[l]) = R_layer(R_t_lm1_pooled,
+                        A_t[l] = self.max_pool(R_t[l-1])
+                    R_t[l],(H_t[l],C_t[l]) = R_layer(A_t[l],
                                                      R_tm1_lp1,
                                                      (H_tm1[l],C_tm1[l]))
                 else:
                     if self.local_grad:
-                        R_t_lm1_pooled = self.max_pool(R_t[l-1].detach())
+                        A_t[l] = self.max_pool(R_t[l-1].detach())
                     else:
-                        R_t_lm1_pooled = self.max_pool(R_t[l-1])
-                    R_t[l],(H_t[l],C_t[l]) = R_layer(R_t_lm1_pooled,
+                        A_t[l] = self.max_pool(R_t[l-1])
+                    R_t[l],(H_t[l],C_t[l]) = R_layer(A_t[l],
                                                      None,
                                                      (H_tm1[l],C_tm1[l]))
                 # Compute Ahat
                 Ahat_layer = self.Ahat_layers[l]
-                Ahat_t = Ahat_layer(R_t[l])
+                Ahat_tp1[l] = Ahat_layer(R_t[l])
                 # Compute E
-                if l == 0:
-                    E_t[l] = self.E_layer(A_t,Ahat_t)
-                else:
-                    E_t[l] = self.E_layer(R_t_lm1_pooled,Ahat_t)
-
-                # Save predictions
-                if self.output == 'pred':
-                    if l == 0 and t > 0:
-                        outputs.append(Ahat_t)
-
-            # Save representations
+                if t > 0:
+                    E_t[l] = self.E_layer(A_t[l],Ahat_t[l])
+            # Update hidden states
+            (H_tm1,C_tm1),R_tm1 = (H_t,C_t),R_t
+            # Output pixel-level predictions
+            if self.output == 'pred':
+                if t > 0:
+                    outputs.append(Ahat_t[0])
+            # Output representations
             if self.output == 'rep':
                 if t == seq_len - 1: # only return reps for last time step
                     outputs = R_t
-
-            # Update
-            (H_tm1,C_tm1),R_tm1 = (H_t,C_t),R_t
+            # Output errors
             if self.output == 'error':
                 if t > 0:
                     outputs.append(E_t) # First time step doesn't count
+
         # errors and preds returned as tensors
         if self.output == 'error':
             outputs_t = torch.zeros(seq_len,self.nb_layers)
