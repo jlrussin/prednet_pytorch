@@ -166,7 +166,7 @@ def main(args):
         for num,i in enumerate(seq_ids):
             if args.sanity_check: # Get first part of seq i, second part of i+1
                 X_i = test_data[i]
-                next_i = seq_ids[(id+1) % args.num_seqs]
+                next_i = seq_ids[(num+1) % args.num_seqs]
                 X_ip1 = test_data[next_i]
                 halfway = args.seq_len//2
                 X = torch.cat((X_i[:halfway],X_ip1[halfway:]),dim=0)
