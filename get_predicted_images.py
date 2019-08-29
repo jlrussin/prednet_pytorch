@@ -169,6 +169,7 @@ def main(args):
                 X_ip1 = test_data[(i+1) % args.num_seqs]
                 halfway = args.seq_len//2
                 X = torch.cat((X_i[:halfway],X_ip1[halfway:]),dim=0)
+                X = X.to(device)
             else:
                 X = test_data[i].to(device)
             X = X.unsqueeze(0) # Add batch dim
