@@ -530,7 +530,7 @@ class MultiConvLSTM(nn.Module):
         (H_tm1,C_tm1),R_tm1 = self.initialize(X)
 
         outputs = []
-        Ahat_tp1 = [None] * self.nb_layers
+        Ahat_t = [None] * self.nb_layers
 
         # Loop through image sequence
         seq_len = X.shape[1]
@@ -541,13 +541,10 @@ class MultiConvLSTM(nn.Module):
             C_t = [None] * self.nb_layers
             E_t = [None] * self.nb_layers
             A_t = [None] * self.nb_layers
-            A_t[0] = X[:,t,:,:,:] # first layer predicts pixels
-            if t > 0:
-                Ahat_t = Ahat_tp1 # preds from prev timestep compared to present
 
-            # Update layers starting from the bottom
+            # Loop through layers computing R and A
+            A_t[0] = X[:,t,:,:,:] # first layer predicts pixels
             for l in range(self.nb_layers):
-                # Compute R
                 R_layer = self.R_layers[l] # cell
                 if l == 0:
                     if self.local_grad:
@@ -575,12 +572,14 @@ class MultiConvLSTM(nn.Module):
                     R_t[l],(H_t[l],C_t[l]) = R_layer(A_t[l],
                                                      None,
                                                      (H_tm1[l],C_tm1[l]))
-                # Compute Ahat
-                Ahat_layer = self.Ahat_layers[l]
-                Ahat_tp1[l] = Ahat_layer(R_t[l])
-                # Compute E
-                if t > 0:
+            # Compute E for all layers
+            if t > 0:
+                for l in range(self.nb_layers):
                     E_t[l] = self.E_layer(A_t[l],Ahat_t[l])
+            # Compute Ahat
+            for l in range(self.nb_layers):
+                Ahat_layer = self.Ahat_layers[l]
+                Ahat_t[l] = Ahat_layer(R_t[l])
             # Update hidden states
             (H_tm1,C_tm1),R_tm1 = (H_t,C_t),R_t
             # Output pixel-level predictions
