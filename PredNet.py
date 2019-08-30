@@ -584,7 +584,7 @@ class MultiConvLSTM(nn.Module):
             (H_tm1,C_tm1),R_tm1 = (H_t,C_t),R_t
             # Output pixel-level predictions
             if self.output == 'pred':
-                if t > 0:
+                if t < seq_len-1:
                     outputs.append(Ahat_t[0])
             # Output representations
             if self.output == 'rep':
