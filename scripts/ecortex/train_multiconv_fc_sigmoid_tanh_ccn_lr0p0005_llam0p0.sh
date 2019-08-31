@@ -33,13 +33,12 @@ python train.py \
 --LSTM_c_act tanh \
 --bias True \
 --FC True \
---local_grad True \
---layer_lambdas 1.0 1.0 1.0 1.0 \
---learning_rate 0.0001 \
+--layer_lambdas 1.0 0.0 0.0 0.0 \
+--learning_rate 0.0005 \
 --lr_steps 0 \
 --results_dir ../results/train_results \
---out_data_file train_multiconv_fc_sigmoid_tanh_lg_ccn_lr0p0001_llam1p0.json \
---checkpoint_path ../model_weights/train_multiconv_fc_sigmoid_tanh_lg_ccn_lr0p0001_llam1p0.pt \
+--out_data_file train_multiconv_fc_sigmoid_tanh_ccn_lr0p0005_llam0p0.json \
+--checkpoint_path ../model_weights/train_multiconv_fc_sigmoid_tanh_ccn_lr0p0005_llam0p0.pt \
 --checkpoint_every 2 \
 --record_E True \
 --record_loss_every 200

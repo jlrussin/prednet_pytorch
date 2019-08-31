@@ -20,9 +20,6 @@ echo "Setting fan for" $gpu "to full"
 nvidia_fancontrol full $gpu
 done
 
-echo "Training PredNet with fc, sigmoid, tanh, local_grad on CCN dataset"
-echo "Learning rate is 0.0001, no steps in scheduler"
-
 python train.py \
 --dataset CCN \
 --train_data_path ../data/ccn_images/train/ \
