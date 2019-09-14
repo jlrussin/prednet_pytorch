@@ -235,7 +235,7 @@ class PredNet(nn.Module):
                  A_kernel_sizes,Ahat_kernel_sizes,R_kernel_sizes,
                  use_satlu,pixel_max,Ahat_act,satlu_act,error_act,
                  LSTM_act,LSTM_c_act,bias=True,
-                 use_1x1_out=True,FC=False,send_acts=False,no_ER=False,
+                 use_1x1_out=False,FC=False,send_acts=False,no_ER=False,
                  RAhat=False,local_grad=False,
                  output='error',device='cpu'):
         super(PredNet,self).__init__()
@@ -264,7 +264,12 @@ class PredNet(nn.Module):
 
         # local gradients means no convolution in A, stack sizes is fixed
         if local_grad:
-            stack_sizes = [3*(2**(s)) for s in range(len(stack_sizes))]
+            if send_acts:
+                # A_l receives from A_{l-1} - all A's have same channel dim
+                stack_sizes = [in_channels for s in range(len(stack_sizes))]
+            else:
+                # A_l receives from E_{l-1} - channel dim doubles each layer
+                stack_sizes = [in_channels*(2**s) for s in range(len(stack_sizes))]
             self.stack_sizes = stack_sizes
 
         # Make sure consistent number of layers
@@ -279,8 +284,6 @@ class PredNet(nn.Module):
         msg = "len(R_kernel_sizes) must equal len(stack_sizes)"
         assert len(R_kernel_sizes) == self.nb_layers, msg
         # Make sure not doing inconsistent ablations
-        msg = "Can't do send_acts and local_grad"
-        assert not (send_acts and local_grad), msg
         msg = "Can't do RAhat and local_grad"
         assert not (RAhat and local_grad), msg
 
@@ -404,7 +407,11 @@ class PredNet(nn.Module):
                         else:
                             A_t = A_layer(E_t[l].detach())
                     else:
-                        A_t = A_layer(A_t) # Send activations rather than errors
+                        # Send activations rather than errors
+                        if not self.local_grad:
+                            A_t = A_layer(A_t)
+                        else:
+                            A_t = A_layer(A_t.detach())
 
             # Update
             (H_tm1,C_tm1),E_tm1 = (H_t,C_t),E_t
@@ -587,11 +594,11 @@ class MultiConvLSTM(nn.Module):
                 if t < seq_len-1:
                     outputs.append(Ahat_t[0])
             # Output representations
-            if self.output == 'rep':
+            elif self.output == 'rep':
                 if t == seq_len - 1: # only return reps for last time step
                     outputs = R_t
             # Output errors
-            if self.output == 'error':
+            elif self.output == 'error':
                 if t > 0:
                     outputs.append(E_t) # First time step doesn't count
 
