@@ -26,14 +26,14 @@ python train.py \
 --val_data_path ../data/ccn_images/val/ \
 --test_data_path ../data/ccn_images/test/ \
 --seq_len 8 \
---batch_size 4 \
+--batch_size 8 \
 --num_iters 150000 \
 --model_type LadderNet \
---stack_sizes 3 48 96 192 \
---R_stack_sizes 3 48 96 192 \
---A_kernel_sizes 3 3 3 \
---Ahat_kernel_sizes 3 3 3 3 \
---R_kernel_sizes 3 3 3 3 \
+--stack_sizes 3 48 96 \
+--R_stack_sizes 3 48 96 \
+--A_kernel_sizes 3 3 \
+--Ahat_kernel_sizes 3 3 3 \
+--R_kernel_sizes 3 3 3 \
 --Ahat_act lrelu \
 --use_satlu True \
 --satlu_act sigmoid \
