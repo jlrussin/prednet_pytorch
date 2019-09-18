@@ -28,7 +28,7 @@ python train.py \
 --seq_len 8 \
 --batch_size 8 \
 --num_iters 150000 \
---model_type Ladder \
+--model_type LadderNet \
 --stack_sizes 3 48 96 192 \
 --R_stack_sizes 3 48 96 192 \
 --A_kernel_sizes 3 3 3 \
