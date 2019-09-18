@@ -213,7 +213,7 @@ def main(args):
                           args.LSTM_c_act,args.bias,args.use_1x1_out,args.FC,
                           args.no_R0,args.no_skip0,args.local_grad,
                           model_out,device)
-
+    print(model)
     if args.load_weights_from is not None:
         model.load_state_dict(torch.load(args.load_weights_from))
     model.to(device)
