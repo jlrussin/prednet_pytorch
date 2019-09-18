@@ -19,7 +19,7 @@ from PredNet import ACell, RCell, ECell
 
 # Ahat cell = [Conv,ReLU]
 class LAhatCell(nn.Module):
-    def __init__(self,R_in_channels,A_in_channels,conv_in_channels,
+    def __init__(self,R_in_channels,A_in_channels,Ahat_in_channels,
                  out_channels,conv_kernel_size,conv_bias,
                  act='relu',use_BN=False,satlu_act='hardtanh',use_satlu=False,
                  pixel_max=1.0,no_R=False,no_A=False,no_Ahat_lp1=False):
@@ -46,10 +46,10 @@ class LAhatCell(nn.Module):
         conv1x1_kernel_size = 1 # used for 1x1 convolutional layers
 
         # Parameters
-        if self.use_BN:
-            self.BN = nn.BatchNorm2d(in_channels)
         # Standard convolutional layer for Ahat_lp1
         if not no_Ahat_lp1:
+            if self.use_BN:
+                self.BN = nn.BatchNorm2d(Ahat_in_channels)
             self.conv = nn.Conv2d(Ahat_in_channels,out_channels,
                                   conv_kernel_size,conv_stride,
                                   conv_pad_,conv_dilation,conv_groups,
@@ -180,7 +180,7 @@ class LadderNet(nn.Module):
             kernel_size = R_kernel_sizes[l]
             cell = RCell(in_channels,out_channels,kernel_size,
                          LSTM_act,LSTM_c_act,
-                         is_last,self.bias,use_1x1_out,FC,no_ER)
+                         is_last,self.bias,use_1x1_out,FC,False)
             R_layers.append(cell)
         self.R_layers = nn.ModuleList(R_layers)
 
@@ -222,7 +222,7 @@ class LadderNet(nn.Module):
 
     def forward(self,X):
         # Get initial states
-        (H_tm1,C_tm1) = self.initailize(X)
+        (H_tm1,C_tm1) = self.initialize(X)
 
         outputs = []
         Ahat_t = [None] * self.nb_layers
@@ -238,9 +238,9 @@ class LadderNet(nn.Module):
             A_t = [None] * self.nb_layers
 
             # Encoder: A and R
-            A_layer = self.A_layers[l] # A cell
-            R_layer = self.R_layers[l] # R cell
             for l in range(self.nb_layers):
+                A_layer = self.A_layers[l] # A cell
+                R_layer = self.R_layers[l] # R cell
                 if l == 0:
                     A_t[l] = X[:,t,:,:,:] # first layer predicts pixels
                     if self.no_R0:

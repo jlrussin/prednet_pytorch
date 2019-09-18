@@ -54,7 +54,6 @@ python train.py \
 --out_data_file train_ladder_defaults.json \
 --checkpoint_path ../model_weights/train_ladder_defaults.pt \
 --checkpoint_every 2 \
---record_E True \
 --record_loss_every 200
 
 for gpu in $gpus

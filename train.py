@@ -12,6 +12,7 @@ from torch.utils.data import DataLoader
 from data import *
 from PredNet import *
 from ConvLSTM import *
+from Ladder import *
 from custom_losses import *
 from utils import *
 
@@ -69,12 +70,12 @@ parser.add_argument('--R_kernel_sizes', type=int, nargs='+', default=[3,3,3,3],
                     help='Kernel sizes for each Ahat module' +
                          'Length should be equal to number of layers')
 parser.add_argument('--Ahat_act', default='relu',
-                    choices=['relu','sigmoid','tanh','hardsigmoid'],
+                    choices=['relu','lrelu','sigmoid','tanh','hardsigmoid'],
                     help='Type of activation for output of Ahat cell.')
 parser.add_argument('--use_satlu', type=str2bool, default=True,
                     help='Boolean indicating whether to use SatLU in Ahat.')
 parser.add_argument('--satlu_act', default='hardtanh',
-                    choices=['hardtanh','logsigmoid'],
+                    choices=['hardtanh','logsigmoid','sigmoid'],
                     help='Type of activation to use for SatLU in Ahat.')
 parser.add_argument('--pixel_max', type=float, default=1.0,
                     help='Maximum output value for Ahat if using SatLU.')
@@ -417,7 +418,7 @@ if __name__ == '__main__':
     print("MKL DNN is available: ", torch._C.has_mkldnn)
     if args.record_E:
         msg = "Must be using PredNet with E loss to record E"
-        model_has_E = args.model_type in ['PredNet','MultiConvLSTM']
+        model_has_E = args.model_type in ['PredNet','MultiConvLSTM','LadderNet']
         assert model_has_E and args.loss == 'E', msg
     main(args)
     print("Total training time: ", time.time() - start_train_time)
