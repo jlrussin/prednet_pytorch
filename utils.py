@@ -19,9 +19,11 @@ def get_activation(activation):
         act_fn = nn.ReLU()
     elif activation == 'hardsigmoid':
         act_fn = Hardsigmoid()
+    elif activation == 'lrelu':
+        act_fn = nn.LeakyReLU()
     return act_fn
 
-def get_pad_same(in_height,in_width,kernel_size):
+def get_pad_same(in_height,in_width,kernel_size,dilation=1):
     if isinstance(kernel_size,int):
         k_height = kernel_size
         k_width = kernel_size
@@ -29,8 +31,8 @@ def get_pad_same(in_height,in_width,kernel_size):
         k_height = kernel_size[0]
         k_width = kernel_size[1]
     # Padding so that conv2d gives same dimensions
-    pad_width = (k_width - 1) / 2 # stride = 1, dilation = 1
-    pad_height = (k_height - 1) / 2 # stride = 1, dilation = 1
+    pad_width = dilation*(k_width - 1) / 2 # stride = 1
+    pad_height = dilation*(k_height - 1) / 2 # stride = 1
     left_pad = int(np.floor(pad_width))
     right_pad = int(np.ceil(pad_width))
     top_pad = int(np.floor(pad_height))

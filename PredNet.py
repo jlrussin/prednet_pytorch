@@ -139,20 +139,26 @@ class RCell(nn.Module):
 # A cells = [Conv,ReLU,MaxPool]
 class ACell(nn.Module):
     def __init__(self,in_channels,out_channels,
-                 conv_kernel_size,conv_bias,no_conv):
+                 conv_kernel_size,conv_dilation,conv_bias,no_conv,
+                 use_BN):
         super(ACell,self).__init__()
 
         # Hyperparameters
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.conv_kernel_size = conv_kernel_size
+        self.conv_dilation = conv_dilation
         self.conv_bias = conv_bias
         self.no_conv = no_conv
+        self.use_BN = use_BN
+
+        if self.use_BN:
+            self.BN = nn.BatchNorm2d(in_channels)
 
         if not no_conv:
             conv_stride = 1 # always 1 for simplicity
             _conv_pad = 0 # padding done manually
-            conv_dilation = 1 # always 1 for simplicity
+            conv_dilation = conv_dilation
             conv_groups = 1 # always 1 for simplicity
             self.conv =  nn.Conv2d(in_channels,out_channels,
                                    conv_kernel_size,conv_stride,
@@ -163,11 +169,14 @@ class ACell(nn.Module):
         self.max_pool = nn.MaxPool2d(pool_kernel_size)
 
     def forward(self,E_lm1):
+        if self.use_BN:
+            E_lm1 = self.BN(E_lm1)
         if not self.no_conv:
             # Manual padding to keep H,W the same
             in_height = E_lm1.shape[2]
             in_width = E_lm1.shape[3]
-            padding = get_pad_same(in_height,in_width,self.conv_kernel_size)
+            padding = get_pad_same(in_height,in_width,self.conv_kernel_size,
+                                   self.conv_dilation)
             E_lm1 = F.pad(E_lm1,padding)
             A = self.conv(E_lm1)
             A = self.relu(A)
@@ -180,7 +189,8 @@ class ACell(nn.Module):
 class AhatCell(nn.Module):
     def __init__(self,in_channels,out_channels,
                  conv_kernel_size,conv_bias,act='relu',
-                 satlu_act='hardtanh',use_satlu=False,pixel_max=1.0):
+                 satlu_act='hardtanh',use_satlu=False,pixel_max=1.0,
+                 use_BN=False):
         super(AhatCell,self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -190,6 +200,10 @@ class AhatCell(nn.Module):
         self.satlu_act = satlu_act
         self.use_satlu = use_satlu
         self.pixel_max = pixel_max
+        self.use_BN = use_BN
+
+        if use_BN:
+            self.BN = nn.BatchNorm2d(in_channels)
 
         conv_stride = 1 # always 1 for simplicity
         conv_pad_ = 0 # padding done manually
@@ -206,6 +220,8 @@ class AhatCell(nn.Module):
             self.satlu = SatLU(satlu_act,self.pixel_max)
 
     def forward(self,R_l):
+        if self.use_BN:
+            R_l = self.BN(R_l)
         # Manual padding to keep dims the same
         in_height = R_l.shape[2]
         in_width = R_l.shape[3]
@@ -236,7 +252,7 @@ class PredNet(nn.Module):
                  use_satlu,pixel_max,Ahat_act,satlu_act,error_act,
                  LSTM_act,LSTM_c_act,bias=True,
                  use_1x1_out=False,FC=False,send_acts=False,no_ER=False,
-                 RAhat=False,local_grad=False,
+                 RAhat=False,local_grad=False,conv_dilation=1,use_BN,
                  output='error',device='cpu'):
         super(PredNet,self).__init__()
         self.in_channels = in_channels
@@ -259,6 +275,8 @@ class PredNet(nn.Module):
         self.no_ER = no_ER # no connection between E_l and R_l
         self.RAhat = RAhat # extra connection between R_{l+1} and A_hat_{l}
         self.local_grad = local_grad # gradients only broadcasted within layers
+        self.conv_dilation = conv_dilation # dilation in A cells
+        self.use_BN = use_BN
         self.output = output
         self.device = device
 
@@ -318,7 +336,7 @@ class PredNet(nn.Module):
             out_channels = stack_sizes[l]
             conv_kernel_size = A_kernel_sizes[l-1]
             cell = ACell(in_channels,out_channels,
-                         conv_kernel_size,bias,no_conv)
+                         conv_kernel_size,conv_dilation,bias,no_conv,use_BN)
             A_layers.append(cell)
         self.A_layers = nn.ModuleList(A_layers)
 
@@ -335,10 +353,12 @@ class PredNet(nn.Module):
                 # Lowest layer uses SatLU
                 cell = AhatCell(in_channels,out_channels,
                                 conv_kernel_size,bias,Ahat_act,satlu_act,
-                                use_satlu=True,pixel_max=pixel_max)
+                                use_satlu=True,pixel_max=pixel_max,
+                                use_BN=use_BN)
             else:
+                # relu for l > 0
                 cell = AhatCell(in_channels,out_channels,
-                                conv_kernel_size,bias) # relu for l > 0
+                                conv_kernel_size,bias,use_BN=use_Bn)
             Ahat_layers.append(cell)
         self.Ahat_layers = nn.ModuleList(Ahat_layers)
 

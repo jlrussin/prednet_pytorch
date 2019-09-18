@@ -25,8 +25,10 @@ class SatLU(nn.Module):
             self.activation = nn.Hardtanh(0,pixel_max)
         elif act == 'logsigmoid':
             self.activation = nn.LogSigmoid()
+        elif act == 'sigmoid':
+            self.activation = nn.Sigmoid()
     def forward(self,input):
-        if self.act == 'hardtanh':
+        if self.act in ['hardtanh','sigmoid']:
             return self.activation(input)
         elif self.act == 'logsigmoid':
             return self.activation(input) + torch.tensor(self.pixel_max)

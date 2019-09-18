@@ -6,25 +6,112 @@ import torch.nn.functional as F
 
 from activations import Hardsigmoid, SatLU
 from utils import *
-from PredNet import ACell, AhatCell, RCell, ECell
+from PredNet import ACell, RCell, ECell
 
 # Things to do:
-#   -Figure out how to do local gradients
-#   -Figure out 1x1 convolutions for computing input to Ahat cells
-#   -Batch normalization - test with and without
+#   -Binary cross entropy instead of L1, MSE - test with CE and E
 #   -Leaky ReLU - test with and without
-#   -Dilation in convolutions - test with and without
-#   -Paper has same ConvLSTM equations?
+#   -Paper has same ConvLSTM equations? - try with and without FC
 #   -Need ConvLSTM/skip connection in first layer? - test with and without each
-#   -Weird training regime in paper?
 #   -Should try ResNet blocks?
-#   -Authors use sigmoid in last layer instead of leaky ReLU, binary CE loss
+#   -No max pooling? - test with and without?
+#       -Need to change all code that computes height and width
+
+# Ahat cell = [Conv,ReLU]
+class LAhatCell(nn.Module):
+    def __init__(self,R_in_channels,A_in_channels,conv_in_channels,
+                 out_channels,conv_kernel_size,conv_bias,
+                 act='relu',use_BN=False,satlu_act='hardtanh',use_satlu=False,
+                 pixel_max=1.0,no_R=False,no_A=False,no_Ahat_lp1=False):
+        super(LAhatCell,self).__init__()
+        self.R_in_channels = R_in_channels
+        self.A_in_channels = A_in_channels
+        self.Ahat_in_channels = Ahat_in_channels
+        self.out_channels = out_channels
+        self.conv_kernel_size = conv_kernel_size
+        self.conv_bias = conv_bias
+        self.act = act
+        self.use_BN = use_BN
+        self.satlu_act = satlu_act
+        self.use_satlu = use_satlu
+        self.pixel_max = pixel_max
+        self.no_R = no_R # no connection from R (layer 0 with no_R0)
+        self.no_A = no_A # no connection from A (layer 0 with no_skip0)
+        self.no_Ahat_lp1 = no_Ahat_lp1 # no connection from Ahat_lp1 (top layer)
+
+        conv_stride = 1 # always 1 for simplicity
+        conv_pad_ = 0 # padding done manually
+        conv_dilation = 1 # always 1 for simplicity
+        conv_groups = 1 # always 1 for simplicity
+        conv1x1_kernel_size = 1 # used for 1x1 convolutional layers
+
+        # Parameters
+        if self.use_BN:
+            self.BN = nn.BatchNorm2d(in_channels)
+        # Standard convolutional layer for Ahat_lp1
+        if not no_Ahat_lp1:
+            self.conv = nn.Conv2d(Ahat_in_channels,out_channels,
+                                  conv_kernel_size,conv_stride,
+                                  conv_pad_,conv_dilation,conv_groups,
+                                  conv_bias)
+        # (1,1) convolutional layer for (Ahat,R)
+        if no_R:
+            Wr_in_channels = out_channels
+        elif no_Ahat_lp1:
+            Wr_in_channels = R_in_channels
+        else:
+            Wr_in_channels = out_channels + R_in_channels
+        self.Wr = nn.Conv2d(Wr_in_channels,out_channels,
+                            conv1x1_kernel_size,conv_stride,
+                            conv_pad_,conv_dilation,conv_groups,
+                            conv_bias)
+        # (1,1) convolutional layer for (LReLU(Ahat,R),A)
+        if not no_A:
+            Wa_in_channels = out_channels + A_in_channels
+            self.Wa = nn.Conv2d(Wa_in_channels,out_channels,
+                                conv1x1_kernel_size,conv_stride,
+                                conv_pad_,conv_dilation,conv_groups,
+                                conv_bias)
+        self.out_act = get_activation(act)
+        if use_satlu:
+            self.satlu = SatLU(satlu_act,self.pixel_max)
+
+    def forward(self,A_l,R_l,Ahat_lp1):
+        # BN + LReLU + Padding + Conv + LReLU
+        if not self.no_Ahat_lp1:
+            if self.use_BN:
+                Ahat_lp1 = self.BN(Ahat_lp1)
+            Ahat_lp1 = self.out_act(Ahat_lp1)
+            in_height = Ahat_lp1.shape[2]
+            in_width = Ahat_lp1.shape[3]
+            padding = get_pad_same(in_height,in_width,self.conv_kernel_size)
+            Ahat_lp1 = F.pad(Ahat_lp1,padding)
+            Ahat_lp1 = self.conv(Ahat_lp1)
+            Ahat_lp1 = self.out_act(Ahat_lp1)
+        # 1x1 convolution for (Ahat,R)
+        if self.no_Ahat_lp1:
+            Ahat = R_l
+        elif self.no_R:
+            Ahat = Ahat_lp1
+        else:
+            Ahat = torch.cat((Ahat_lp1,R_l),dim=1) # cat on channel dim
+        Ahat = self.Wr(Ahat)
+        # 1x1 convolution for A
+        if not self.no_A:
+            Ahat = self.out_act(Ahat)
+            Ahat = torch.cat((Ahat,A_l),dim=1)
+            Ahat = self.Wa(Ahat)
+        if self.use_satlu:
+            Ahat = self.satlu(Ahat)
+        else:
+            Ahat = self.out_act(Ahat)
+        return Ahat
 
 class LadderNet(nn.Module):
     def __init__(self,in_channels,stack_sizes,R_stack_sizes,
                  A_kernel_sizes,Ahat_kernel_sizes,R_kernel_sizes,
-                 use_satlu,pixel_max,Ahat_act,satlu_act,error_act,
-                 LSTM_act,LSTM_c_act,bias=True,
+                 conv_dilation,use_BN,use_satlu,pixel_max,Ahat_act,satlu_act,
+                 error_act,LSTM_act,LSTM_c_act,bias=True,
                  use_1x1_out=False,FC=True,no_R0=True,no_skip0=True,
                  local_grad=False,
                  output='error',device='cpu'):
@@ -35,6 +122,8 @@ class LadderNet(nn.Module):
         self.A_kernel_sizes = A_kernel_sizes
         self.Ahat_kernel_sizes = Ahat_kernel_sizes
         self.R_kernel_sizes = R_kernel_sizes
+        self.conv_dilation = conv_dilation
+        self.use_BN = use_BN
         self.use_satlu = use_satlu
         self.pixel_max = pixel_max
         self.Ahat_act = Ahat_act
@@ -75,15 +164,16 @@ class LadderNet(nn.Module):
             out_channels = stack_sizes[l]
             conv_kernel_size = A_kernel_sizes[l-1]
             cell = ACell(in_channels,out_channels,
-                         conv_kernel_size,bias,no_conv)
+                         conv_kernel_size,conv_dilation,bias,no_conv,use_BN)
             A_layers.append(cell)
         self.A_layers = nn.ModuleList(A_layers)
 
         # R cells: convolutional LSTM
         R_layers = []
-        if self.no_R0:
-            R_layers.append(None)
         for l in range(self.nb_layers):
+            if l == 0 and self.no_R0:
+                R_layers.append(None)
+                continue
             is_last = True # always true - doesn't receive from higher layer
             in_channels = stack_sizes[l]
             out_channels = R_stack_sizes[l]
@@ -94,33 +184,36 @@ class LadderNet(nn.Module):
             R_layers.append(cell)
         self.R_layers = nn.ModuleList(R_layers)
 
-        # A_hat cells: conv + nonlinearity
+        # A_hat cells: BN+LReLU+conv+LReLU+1x1conv+LReLU+1x1conv+LReLU
         Ahat_layers = []
         for l in range(self.nb_layers):
-            if l == 0:
-                if self.no_R0 and self.no_skip0:
-                    in_channels = stack_sizes[l+1]
-                elif self.no_R0 and not self.skip0:
-                    in_channels = stack_sizes[l]+stack_sizes[l+1]
-                elif not self.no_R0 and self.skip0:
-                    in_channels = R_stack_sizes[l]+stack_sizes[l+1]
-                else:
-                    in_channels = R_stack_sizes[l]+stack_sizes[l]+
-                                  stack_sizes[l+1]
-            elif l < self.nb_layers-1:
-                in_channels = R_stack_sizes[l]+stack_sizes[l]+stack_sizes[l+1]
+            if l == 0 and no_R0:
+                no_R = True
+                R_in_channels = None
             else:
-                in_channels = R_stack_sizes[l]+stack_sizes[l]
+                no_R = False
+                R_in_channels = R_stack_sizes[l]
+            if l == 0 and no_skip0:
+                no_A = True
+                A_in_channels = None
+            else:
+                no_A = False
+                A_in_channels = stack_sizes[l]
+            if l == self.nb_layers-1:
+                Ahat_in_channels = None
+                no_Ahat_lp1 = True
+            else:
+                Ahat_in_channels = stack_sizes[l+1]
+                no_Ahat_lp1 = False
             out_channels = stack_sizes[l]
             conv_kernel_size = Ahat_kernel_sizes[l]
-            if self.use_satlu and l == 0:
-                # Lowest layer uses SatLU
-                cell = AhatCell(in_channels,out_channels,
-                                conv_kernel_size,bias,Ahat_act,satlu_act,
-                                use_satlu=True,pixel_max=pixel_max)
-            else:
-                cell = AhatCell(in_channels,out_channels,
-                                conv_kernel_size,bias) # relu for l > 0
+            use_satlu = self.use_satlu and l == 0 # Lowest layer uses SatLU
+            cell = LAhatCell(R_in_channels,A_in_channels,Ahat_in_channels,
+                             out_channels,conv_kernel_size,
+                             self.bias,act=Ahat_act,use_BN=use_BN,
+                             satlu_act=satlu_act,use_satlu=use_satlu,
+                             pixel_max=pixel_max,no_R=no_R,no_A=no_A,
+                             no_Ahat_lp1=no_Ahat_lp1)
             Ahat_layers.append(cell)
         self.Ahat_layers = nn.ModuleList(Ahat_layers)
 
@@ -156,9 +249,12 @@ class LadderNet(nn.Module):
                         R_t[l],(H_t[l],C_t[l]) = R_layer(A_t[l], None,
                                                          (H_tm1[l],C_tm1[l]))
                 else:
-                    A_t[l] = A_layer(A_t[l-1])
+                    if self.local_grad:
+                        A_t[l] = A_layer(A_t[l-1].detach())
+                    else:
+                        A_t[l] = A_layer(A_t[l-1])
                     R_t[l], (H_t[l],C_t[l]) = R_layer(A_t[l], None,
-                                                      (H_tm1[l],C_tm1[l])
+                                                      (H_tm1[l],C_tm1[l]))
 
             # Errors from predictions on previous time steps
             if t > 0:
@@ -169,23 +265,18 @@ class LadderNet(nn.Module):
             for l in reversed(range(self.nb_layers)):
                 Ahat_layer = self.Ahat_layers[l]
                 if l == self.nb_layers - 1:
-                    Ahat_input = torch.cat((A_t[l],R_t[l]),dim=1) # channel dim
+                    Ahat_up = None
                 elif l > 0:
                     target_size = (A_t[l].shape[2],A_t[l].shape[3])
                     Ahat_up = F.interpolate(Ahat_t[l+1],target_size)
-                    Ahat_input = torch.cat((A_t[l],R_t[l],Ahat_up),dim=1)
+                    if self.local_grad:
+                        Ahat_up = Ahat_up.detach()
                 elif l == 0:
                     target_size = (A_t[l].shape[2],A_t[l].shape[3])
                     Ahat_up = F.interpolate(Ahat_t[l+1],target_size)
-                    if self.no_R0 and self.no_skip0:
-                        Ahat_input = Ahat_up
-                    elif self.no_R0 and not self.no_skip0:
-                        Ahat_input = torch.cat((A_t[l],Ahat_up),dim=1)
-                    elif not self.no_R0 and self.no_skip0:
-                        Ahat_input = torch.cat((R_t[l],Ahat_up),dim=1)
-                    else:
-                        Ahat_input = torch.cat((A_t[l],R_t[l],Ahat_up),dim=1)
-                Ahat_t[l] = Ahat_layer(Ahat_input)
+                    if self.local_grad:
+                        Ahat_up = Ahat_up.detach()
+                Ahat_t[l] = Ahat_layer(A_t[l],R_t[l],Ahat_up)
 
             # Update hidden states
             (H_tm1,C_tm1) = (H_t,C_t)

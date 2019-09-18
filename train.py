@@ -48,7 +48,7 @@ parser.add_argument('--num_iters', type=int, default=75000,
 
 # Models
 parser.add_argument('--model_type', choices=['PredNet','ConvLSTM',
-                                             'MultiConvLSTM'],
+                                             'MultiConvLSTM','LadderNet'],
                     default='PredNet', help='Type of model to use.')
 # Hyperparameters for PredNet
 parser.add_argument('--stack_sizes', type=int, nargs='+', default=[3,48,96,192],
@@ -96,6 +96,11 @@ parser.add_argument('--RAhat', type=str2bool, default=False,
 parser.add_argument('--local_grad', type=str2bool, default=False,
                     help='Boolean indicating whether to restrict gradients ' +
                          'to flow locally (within each layer)')
+parser.add_argument('--conv_dilation', type=int, default=1,
+                    help='Dilation for convolution in ACells')
+parser.add_argument('--use_BN', type=str2bool, default=False,
+                    help='Boolean indicating whether to use batch ' +
+                         'normalization on inputs in all A and Ahat cells')
 # Hyperparameters for ConvLSTM
 parser.add_argument('--hidden_channels', type=int, default=192,
                     help='Number of channels in hidden states of ConvLSTM')
@@ -119,9 +124,16 @@ parser.add_argument('--FC', type=str2bool, default=False,
                          'convolutional LSTM cell')
 parser.add_argument('--load_weights_from', default=None,
                     help='Path to saved weights')
+# Hyperparameters unique to LadderNet
+parser.add_argument('--no_R0', type=str2bool, default=True,
+                    help='Boolean indicating whether not to include' +
+                         'ConvLSTM in first layer of LadderNet')
+parser.add_argument('--no_skip0', type=str2bool, default=True,
+                    help='Boolean indicating whether not to include' +
+                         'skip connection in first layer of LadderNet')
 
 # Optimization
-parser.add_argument('--loss', default='E',choices=['E','MSE','L1'])
+parser.add_argument('--loss', default='E',choices=['E','MSE','L1','BCE'])
 parser.add_argument('--learning_rate', type=float, default=0.001,
                     help='Fixed learning rate for Adam optimizer')
 parser.add_argument('--lr_steps', type=int, default=1,
@@ -178,7 +190,8 @@ def main(args):
                         args.Ahat_act,args.satlu_act,args.error_act,
                         args.LSTM_act,args.LSTM_c_act,args.bias,
                         args.use_1x1_out,args.FC,args.send_acts,args.no_ER,
-                        args.RAhat,args.local_grad,model_out,device)
+                        args.RAhat,args.local_grad,args.conv_dilation,
+                        args.use_BN,model_out,device)
     elif args.model_type == 'MultiConvLSTM':
         model = MultiConvLSTM(args.in_channels,args.R_stack_sizes,
                               args.R_kernel_sizes,args.use_satlu,args.pixel_max,
@@ -190,6 +203,15 @@ def main(args):
         model = ConvLSTM(args.in_channels,args.hidden_channels,args.kernel_size,
                          args.LSTM_act,args.LSTM_c_act,args.out_act,
                          args.bias,args.FC,device)
+    elif args.model_type == 'LadderNet':
+        model = LadderNet(args.in_channels,args.stack_sizes,args.R_stack_sizes,
+                          args.A_kernel_sizes,args.Ahat_kernel_sizes,
+                          args.R_kernel_sizes,args.conv_dilation,args.use_BN,
+                          args.use_satlu,args.pixel_max,args.Ahat_act,
+                          args.satlu_act,args.error_act,args.LSTM_act,
+                          args.LSTM_c_act,args.bias,args.use_1x1_out,args.FC,
+                          args.no_R0,args.no_skip0,args.local_grad,
+                          model_out,device)
 
     if args.load_weights_from is not None:
         model.load_state_dict(torch.load(args.load_weights_from))

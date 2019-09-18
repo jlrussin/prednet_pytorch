@@ -20,4 +20,6 @@ def get_loss_fn(loss,layer_lambdas):
         loss_fn = nn.MSELoss()
     elif loss == 'L1':
         loss_fn = nn.L1Loss()
+    elif loss == 'BCE':
+        loss_fn = nn.BCELoss()
     return loss_fn
