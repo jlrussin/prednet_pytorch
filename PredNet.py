@@ -252,7 +252,7 @@ class PredNet(nn.Module):
                  use_satlu,pixel_max,Ahat_act,satlu_act,error_act,
                  LSTM_act,LSTM_c_act,bias=True,
                  use_1x1_out=False,FC=False,send_acts=False,no_ER=False,
-                 RAhat=False,local_grad=False,conv_dilation=1,use_BN,
+                 RAhat=False,local_grad=False,conv_dilation=1,use_BN=False,
                  output='error',device='cpu'):
         super(PredNet,self).__init__()
         self.in_channels = in_channels
