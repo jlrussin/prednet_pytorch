@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 #SBATCH -p localLimited
 #SBATCH -A ecortex
-#SBATCH --mem=10G
+#SBATCH --mem=25G
 #SBATCH --time=72:00:00
 #SBATCH --gres=gpu:1
-#SBATCH -c 4
+#SBATCH -c 3
 
 export HOME=`getent passwd $USER | cut -d':' -f6`
 export PYTHONUNBUFFERED=1
