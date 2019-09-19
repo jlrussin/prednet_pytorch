@@ -9,13 +9,10 @@ from utils import *
 from PredNet import ACell, RCell, ECell
 
 # Things to do:
-#   -Binary cross entropy instead of L1, MSE - test with CE and E
-#   -Leaky ReLU - test with and without
-#   -Paper has same ConvLSTM equations? - try with and without FC
-#   -Need ConvLSTM/skip connection in first layer? - test with and without each
-#   -Should try ResNet blocks?
+#   -Need to allow different strides and dilations at each layer 
 #   -No max pooling? - test with and without?
 #       -Need to change all code that computes height and width
+#   -Should try ResNet blocks?
 
 # Ahat cell = [Conv,ReLU]
 class LAhatCell(nn.Module):
