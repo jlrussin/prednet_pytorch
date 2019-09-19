@@ -358,7 +358,7 @@ class PredNet(nn.Module):
             else:
                 # relu for l > 0
                 cell = AhatCell(in_channels,out_channels,
-                                conv_kernel_size,bias,use_BN=use_Bn)
+                                conv_kernel_size,bias,use_BN=use_BN)
             Ahat_layers.append(cell)
         self.Ahat_layers = nn.ModuleList(Ahat_layers)
 
