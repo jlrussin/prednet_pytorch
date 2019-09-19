@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 #SBATCH -p localLimited
 #SBATCH -A ecortex
-#SBATCH --nodelist=local02
 #SBATCH --mem=32G
 #SBATCH --time=72:00:00
 #SBATCH --gres=gpu:1
