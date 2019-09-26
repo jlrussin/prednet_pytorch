@@ -289,11 +289,10 @@ def main(args):
                 if args.record_corr:
                     model_output = model.output
                     model.output = 'pred'
-                    with torch.no_grad():
-                        output = model(X)
-                        X_no_t0 = X[:,1:,:,:,:]
-                        corr = correlation(output,X_no_t0)
-                        corr_data.append(corr.data.item())
+                    output = model(X)
+                    X_no_t0 = X[:,1:,:,:,:]
+                    corr = correlation(output,X_no_t0)
+                    corr_data.append(corr.data.item())
                     model.output = model_output
             if iter >= args.num_iters:
                 break
