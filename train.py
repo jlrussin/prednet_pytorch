@@ -147,6 +147,8 @@ parser.add_argument('--layer_lambdas', type=float,
 # Output options
 parser.add_argument('--record_E', default=False,
                     help='Record E for each layer')
+parser.add_argument('--record_corr', default=False,
+                    help='Record correlation throughout training')
 parser.add_argument('--results_dir', default='../results/train_results',
                     help='Results subdirectory to save results')
 parser.add_argument('--out_data_file', default='results.json',
@@ -233,6 +235,7 @@ def main(args):
     # Stats
     ave_time = 0.0
     loss_data = [] # records loss every args.record_loss_every iters
+    corr_data = [] # records correlation every args.record_loss_every iters
     train_losses = [] # records mean training loss every checkpoint
     train_corrs = [] # records mean training  correlation every checkpoint
     val_losses = [] # records mean validation loss every checkpoint
@@ -283,6 +286,17 @@ def main(args):
                     for l in range(model.nb_layers):
                         E_datapoint = E_means[l].data.item()
                         E_data['layer%d' % l].append(E_datapoint)
+                if args.record_corr:
+                    model_output = model.output
+                    model.output = 'pred'
+                    model.eval()
+                    with torch.no_grad():
+                        output = model(X)
+                        X_no_t0 = X[:,1:,:,:,:]
+                        corr = correlation(X,X_no_t0)
+                        corr_data.append(corr.data.item())
+                    model.output = model_output
+                    model.train()
             if iter >= args.num_iters:
                 break
         # Checkpoint
@@ -331,6 +345,7 @@ def main(args):
             if not os.path.isdir(args.results_dir):
                 os.mkdir(args.results_dir)
             stats = {'loss_data':loss_data,
+                     'corr_data':corr_data,
                      'train_mse_losses':train_losses,
                      'train_corrs':train_corrs,
                      'val_mse_losses':val_losses,
