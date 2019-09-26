@@ -293,7 +293,7 @@ def main(args):
                     with torch.no_grad():
                         output = model(X)
                         X_no_t0 = X[:,1:,:,:,:]
-                        corr = correlation(X,X_no_t0)
+                        corr = correlation(output,X_no_t0)
                         corr_data.append(corr.data.item())
                     model.output = model_output
                     model.train()
