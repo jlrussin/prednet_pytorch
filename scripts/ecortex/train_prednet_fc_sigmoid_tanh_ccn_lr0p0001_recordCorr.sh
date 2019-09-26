@@ -39,12 +39,12 @@ python train.py \
 --learning_rate 0.0001 \
 --lr_steps 0 \
 --results_dir ../results/train_results \
---out_data_file train_prednet_fc_sigmoid_tanh_ccn_lr0p0001_recordCorr.json \
---checkpoint_path ../model_weights/train_prednet_fc_sigmoid_tanh_ccn_lr0p0001_recordCorr.pt \
---checkpoint_every 2 \
+--out_data_file train_prednet_fc_sigmoid_tanh_ccn_lr0p0001_recordCorr1.json \
+--checkpoint_path ../model_weights/train_prednet_fc_sigmoid_tanh_ccn_lr0p0001_recordCorr1.pt \
+--checkpoint_every 1 \
 --record_E True \
 --record_corr True \
---record_loss_every 200
+--record_loss_every 1
 
 
 for gpu in $gpus
