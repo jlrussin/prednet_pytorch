@@ -13,6 +13,7 @@ from data import *
 from PredNet import *
 from ConvLSTM import *
 from Ladder import *
+from StackedConvLSTM import *
 from custom_losses import *
 from utils import *
 
@@ -49,7 +50,8 @@ parser.add_argument('--num_iters', type=int, default=75000,
 
 # Models
 parser.add_argument('--model_type', choices=['PredNet','ConvLSTM',
-                                             'MultiConvLSTM','LadderNet'],
+                                             'MultiConvLSTM','LadderNet',
+                                             'StackedConvLSTM'],
                     default='PredNet', help='Type of model to use.')
 # Hyperparameters for PredNet
 parser.add_argument('--stack_sizes', type=int, nargs='+', default=[3,48,96,192],
@@ -215,6 +217,10 @@ def main(args):
                           args.LSTM_c_act,args.bias,args.use_1x1_out,args.FC,
                           args.no_R0,args.no_skip0,args.local_grad,
                           model_out,device)
+    elif args.model_type == 'StackedConvLSTM':
+        model = StackedConvLSTM(args.in_channels,args.R_stack_sizes,
+                                args.R_kernel_sizes,args.use_1x1_out,
+                                args.FC,args.local_grad,model_out,device)
     print(model)
     if args.load_weights_from is not None:
         model.load_state_dict(torch.load(args.load_weights_from))
@@ -430,7 +436,8 @@ if __name__ == '__main__':
     print("MKL DNN is available: ", torch._C.has_mkldnn)
     if args.record_E:
         msg = "Must be using PredNet with E loss to record E"
-        model_has_E = args.model_type in ['PredNet','MultiConvLSTM','LadderNet']
+        model_has_E = args.model_type in ['PredNet','MultiConvLSTM',
+                                          'LadderNet','StackedConvLSTM']
         assert model_has_E and args.loss == 'E', msg
     main(args)
     print("Total training time: ", time.time() - start_train_time)

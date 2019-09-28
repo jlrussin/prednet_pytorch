@@ -9,7 +9,7 @@ from utils import *
 from PredNet import ACell, RCell, ECell
 
 # Things to do:
-#   -Need to allow different strides and dilations at each layer 
+#   -Need to allow different strides and dilations at each layer
 #   -No max pooling? - test with and without?
 #       -Need to change all code that computes height and width
 #   -Should try ResNet blocks?
