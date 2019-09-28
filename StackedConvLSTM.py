@@ -152,7 +152,7 @@ class StackedConvLSTM(nn.Module):
                 in_channels = stack_sizes[l] + stack_sizes[l+1]
             hidden_channels = stack_sizes[l]
             kernel_size = kernel_sizes[l]
-            cell = ConvLSTM(in_channels,hidden_channels,kernel_size,
+            cell = ConvLSTMCell(in_channels,hidden_channels,kernel_size,
                             use_1x1_out,FC)
             backward_layers.append(cell)
         self.backward_layers = nn.ModuleList(backward_layers)
@@ -173,6 +173,10 @@ class StackedConvLSTM(nn.Module):
 
         # E layer for computing errors: [ReLU(A-Ahat);ReLU(Ahat-A)]
         self.E_layer = ECell('relu')
+
+        # Activations
+        self.sigmoid = nn.Sigmoid() # layer 0 Ahat activation
+        self.tanh = nn.Tanh() # all other Ahat activations
 
     def forward(self,X):
         # Get initial states
@@ -231,8 +235,12 @@ class StackedConvLSTM(nn.Module):
                                                                (H_tm1_b[l],
                                                                 C_tm1_b[l]))
                 # Compute Ahat (prediction about the next time step)
+                in_height = R_t_b[l].shape[2]
+                in_width = R_t_b[l].shape[3]
+                padding = get_pad_same(in_height,in_width,self.kernel_sizes[l])
+                R_t_b_l_padded = F.pad(R_t_b[l],padding)
                 conv_layer = self.conv_layers[l]
-                Ahat_t[l] = conv_layer(R_t_b[l])
+                Ahat_t[l] = conv_layer(R_t_b_l_padded)
                 if l == 0:
                     Ahat_t[l] = self.sigmoid(Ahat_t[l])
                 else:
