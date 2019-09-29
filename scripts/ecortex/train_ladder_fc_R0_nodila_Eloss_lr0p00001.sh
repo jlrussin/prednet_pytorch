@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 #SBATCH -p localLimited
 #SBATCH -A ecortex
-#SBATCH --nodelist=local02
 #SBATCH --mem=25G
 #SBATCH --time=72:00:00
 #SBATCH --gres=gpu:1
@@ -28,19 +27,32 @@ python train.py \
 --test_data_path ../data/ccn_images/test/ \
 --seq_len 8 \
 --batch_size 8 \
---num_iters 80000 \
---model_type StackedConvLSTM \
+--num_iters 150000 \
+--model_type LadderNet \
+--stack_sizes 3 48 96 192 \
 --R_stack_sizes 3 48 96 192 \
+--A_kernel_sizes 3 3 3 \
+--Ahat_kernel_sizes 3 3 3 3 \
 --R_kernel_sizes 3 3 3 3 \
---FC True \
+--Ahat_act lrelu \
+--use_satlu True \
+--satlu_act sigmoid \
 --local_grad False \
---load_weights_from ../model_weights/train_stacked_defaults.pt \
+--conv_dilation 1 \
+--use_BN True \
+--LSTM_act sigmoid \
+--LSTM_c_act tanh \
+--bias True \
+--FC True \
+--no_R0 False \
+--no_skip0 True \
+--loss E \
 --layer_lambdas 1.0 0.0 0.0 0.0 \
---learning_rate 0.0001 \
+--learning_rate 0.00001 \
 --lr_steps 0 \
 --results_dir ../results/train_results \
---out_data_file train_stacked_defaults2.json \
---checkpoint_path ../model_weights/train_stacked_defaults.pt \
+--out_data_file train_ladder_fc_R0_nodila_Eloss_lr0p00001.json \
+--checkpoint_path ../model_weights/train_ladder_fc_R0_nodila_Eloss_lr0p00001.pt \
 --checkpoint_every 2 \
 --record_loss_every 200
 
