@@ -28,7 +28,7 @@ python train.py \
 --test_data_path ../data/ccn_images/test/ \
 --seq_len 8 \
 --batch_size 8 \
---num_iters 80000 \
+--num_iters 150000 \
 --model_type StackedConvLSTM \
 --R_stack_sizes 3 48 96 192 \
 --R_kernel_sizes 3 3 3 3 \
