@@ -34,7 +34,6 @@ python train.py \
 --R_kernel_sizes 3 3 3 3 \
 --FC True \
 --local_grad False \
---load_weights_from ../model_weights/train_stacked_defaults.pt \
 --layer_lambdas 1.0 0.0 0.0 0.0 \
 --learning_rate 0.0005 \
 --lr_steps 0 \
