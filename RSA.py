@@ -289,7 +289,10 @@ def main(args):
         model.load_state_dict(torch.load(args.load_weights_from))
     model.to(device)
     model.eval()
-    nb_layers = model.nb_layers
+    if args.model_type == 'LadderNet' and args.no_R0:
+        nb_reps = model.nb_layers - 1
+    else:
+        nb_reps = model.nb_layers
 
     # Dataset
     test_data = CCN(args.test_data_path,args.seq_len,return_labels=True,
@@ -309,7 +312,7 @@ def main(args):
             n_samples = len(partition)
             dataloader = DataLoader(partition,args.batch_size)
             # Run model, keeping running sum of representations
-            layer_reps = [[] for l in range(nb_layers+1)] # nb_layers + pixels
+            layer_reps = [[] for l in range(nb_reps+1)] # nb_reps + pixels
             for batch_i,batch in enumerate(dataloader):
                 X = batch[0].to(device)
                 # Get representations
@@ -318,12 +321,12 @@ def main(args):
                 # Aggregate across space
                 agg_pixels = aggregate_space(pixels,args.aggregate_method)
                 agg_reps = [agg_pixels] # first layer is pixels
-                for l in range(nb_layers):
+                for l in range(nb_reps):
                     agg_rep = aggregate_space(reps[l],args.aggregate_method)
                     agg_reps.append(agg_rep)
                 # Sum batch
                 layer_sums = []
-                for l in range(nb_layers+1):
+                for l in range(nb_reps+1):
                     layer_sum = torch.sum(agg_reps[l],dim=0)
                     layer_sum = layer_sum.unsqueeze(0) # Add label dimension
                     layer_sums.append(layer_sum)
@@ -331,7 +334,7 @@ def main(args):
                 if batch_i == 0:
                     layer_reps = layer_sums
                 else:
-                    for l in range(nb_layers+1):
+                    for l in range(nb_reps+1):
                         layer_reps[l] += layer_sums[l]
             # Divide by n_samples to get average
             layer_reps = [layer_rep/n_samples for layer_rep in layer_reps]
@@ -339,7 +342,7 @@ def main(args):
             print("Finished processing samples for label: %s" % label)
         layer_lists = list(map(list, zip(*label_reps))) # transpose lists
         layer_tensors = []
-        for l in range(nb_layers+1):
+        for l in range(nb_reps+1):
             layer_tensor = torch.cat(layer_lists[l],dim=0)
             layer_tensors.append(layer_tensor)
 

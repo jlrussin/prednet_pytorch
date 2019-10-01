@@ -205,7 +205,10 @@ def main(args):
         model.load_state_dict(torch.load(args.load_weights_from))
     model.to(device)
     model.eval()
-    nb_layers = model.nb_layers
+    if args.model_type == 'LadderNet' and args.no_R0:
+        nb_reps = model.nb_layers - 1
+    else:
+        nb_reps = model.nb_layers
 
     # Dataset
     train_data = CCN(args.train_data_path,args.seq_len,return_cats=True)
@@ -235,7 +238,7 @@ def main(args):
 
     # Initialize linear layers
     decoders = []
-    for l in range(nb_layers+1): # all layers plus 1 for pixels
+    for l in range(nb_reps+1): # all layers plus 1 for pixels
         decoder = nn.Linear(layer_dims[l],n_cats)
         if args.load_decoders_from is not None:
             pt_path = args.load_decoders_from + 'decoder%d' % l
