@@ -286,7 +286,10 @@ class LadderNet(nn.Module):
                     outputs.append(Ahat_t[0])
             elif self.output == 'rep':
                 if t == seq_len - 1: # only return reps for last time step
-                    outputs = R_t
+                    if R_t[0] is None:
+                        outputs = R_t[1:]
+                    else:
+                        outputs = R_t
             elif self.output == 'error':
                 if t > 0: # first time step doesn't count
                     outputs.append(E_t)
