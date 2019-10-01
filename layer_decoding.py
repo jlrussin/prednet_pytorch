@@ -13,6 +13,8 @@ from data import *
 from activations import *
 from PredNet import *
 from ConvLSTM import *
+from Ladder import *
+from StackedConvLSTM import *
 from utils import *
 
 parser = argparse.ArgumentParser()
