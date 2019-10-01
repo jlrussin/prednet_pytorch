@@ -107,8 +107,8 @@ class LAhatCell(nn.Module):
 class LadderNet(nn.Module):
     def __init__(self,in_channels,stack_sizes,R_stack_sizes,
                  A_kernel_sizes,Ahat_kernel_sizes,R_kernel_sizes,
-                 conv_dilation,use_BN,use_satlu,pixel_max,Ahat_act,satlu_act,
-                 error_act,LSTM_act,LSTM_c_act,bias=True,
+                 conv_dilation,use_BN,use_satlu,pixel_max,A_act,Ahat_act,
+                 satlu_act,error_act,LSTM_act,LSTM_c_act,bias=True,
                  use_1x1_out=False,FC=True,no_R0=True,no_skip0=True,
                  local_grad=False,
                  output='error',device='cpu'):
@@ -123,6 +123,7 @@ class LadderNet(nn.Module):
         self.use_BN = use_BN
         self.use_satlu = use_satlu
         self.pixel_max = pixel_max
+        self.A_act = A_act
         self.Ahat_act = Ahat_act
         self.satlu_act = satlu_act
         self.error_act = error_act
@@ -161,7 +162,8 @@ class LadderNet(nn.Module):
             out_channels = stack_sizes[l]
             conv_kernel_size = A_kernel_sizes[l-1]
             cell = ACell(in_channels,out_channels,
-                         conv_kernel_size,conv_dilation,bias,no_conv,use_BN)
+                         conv_kernel_size,conv_dilation,bias,
+                         no_conv,use_BN,A_act)
             A_layers.append(cell)
         self.A_layers = nn.ModuleList(A_layers)
 

@@ -140,7 +140,7 @@ class RCell(nn.Module):
 class ACell(nn.Module):
     def __init__(self,in_channels,out_channels,
                  conv_kernel_size,conv_dilation,conv_bias,no_conv,
-                 use_BN):
+                 use_BN,act_fn='relu'):
         super(ACell,self).__init__()
 
         # Hyperparameters
@@ -151,6 +151,7 @@ class ACell(nn.Module):
         self.conv_bias = conv_bias
         self.no_conv = no_conv
         self.use_BN = use_BN
+        self.act_fn = act_fn
 
         if self.use_BN:
             self.BN = nn.BatchNorm2d(in_channels)
@@ -164,7 +165,7 @@ class ACell(nn.Module):
                                    conv_kernel_size,conv_stride,
                                    _conv_pad,conv_dilation,conv_groups,
                                    conv_bias)
-            self.relu = nn.ReLU()
+            self.act = get_activation(act_fn)
         pool_kernel_size = 2 # always 2 for simplicity
         self.max_pool = nn.MaxPool2d(pool_kernel_size)
 
@@ -179,7 +180,7 @@ class ACell(nn.Module):
                                    self.conv_dilation)
             E_lm1 = F.pad(E_lm1,padding)
             A = self.conv(E_lm1)
-            A = self.relu(A)
+            A = self.act(A)
         else:
             A = E_lm1
         A = self.max_pool(A)

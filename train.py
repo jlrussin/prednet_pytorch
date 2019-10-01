@@ -71,6 +71,9 @@ parser.add_argument('--Ahat_kernel_sizes', type=int, nargs='+',
 parser.add_argument('--R_kernel_sizes', type=int, nargs='+', default=[3,3,3,3],
                     help='Kernel sizes for each Ahat module' +
                          'Length should be equal to number of layers')
+parser.add_argument('--A_act', default='relu',
+                    choices=['relu','lrelu','sigmoid','tanh','hardsigmoid'],
+                    help='Type of activation for output of Ahat cell.')
 parser.add_argument('--Ahat_act', default='relu',
                     choices=['relu','lrelu','sigmoid','tanh','hardsigmoid'],
                     help='Type of activation for output of Ahat cell.')
@@ -212,11 +215,11 @@ def main(args):
         model = LadderNet(args.in_channels,args.stack_sizes,args.R_stack_sizes,
                           args.A_kernel_sizes,args.Ahat_kernel_sizes,
                           args.R_kernel_sizes,args.conv_dilation,args.use_BN,
-                          args.use_satlu,args.pixel_max,args.Ahat_act,
-                          args.satlu_act,args.error_act,args.LSTM_act,
-                          args.LSTM_c_act,args.bias,args.use_1x1_out,args.FC,
-                          args.no_R0,args.no_skip0,args.local_grad,
-                          model_out,device)
+                          args.use_satlu,args.pixel_max,args.A_act,
+                          args.Ahat_act,args.satlu_act,args.error_act,
+                          args.LSTM_act,args.LSTM_c_act,args.bias,
+                          args.use_1x1_out,args.FC,args.no_R0,args.no_skip0,
+                          args.local_grad,model_out,device)
     elif args.model_type == 'StackedConvLSTM':
         model = StackedConvLSTM(args.in_channels,args.R_stack_sizes,
                                 args.R_kernel_sizes,args.use_1x1_out,
