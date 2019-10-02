@@ -20,28 +20,20 @@ echo "Setting fan for" $gpu "to full"
 nvidia_fancontrol full $gpu
 done
 
-python train.py \
---dataset CCN \
---train_data_path ../data/ccn_images/train/ \
---val_data_path ../data/ccn_images/val/ \
+python RSA.py \
+--aggregate_method none \
+--similarity_measure corr \
 --test_data_path ../data/ccn_images/test/ \
 --seq_len 8 \
---batch_size 8 \
---num_iters 80000 \
+--idx_dict_hkl ../data/ccn_images/test_label_idx_dict.hkl \
 --model_type StackedConvLSTM \
 --R_stack_sizes 3 48 96 192 \
 --R_kernel_sizes 3 3 3 3 \
 --FC True \
 --local_grad False \
 --load_weights_from ../model_weights/train_stacked_defaults.pt \
---layer_lambdas 1.0 0.0 0.0 0.0 \
---learning_rate 0.0001 \
---lr_steps 0 \
---results_dir ../results/train_results \
---out_data_file train_stacked_defaults2.json \
---checkpoint_path ../model_weights/train_stacked_defaults.pt \
---checkpoint_every 2 \
---record_loss_every 200
+--results_dir ../results/rsa/ \
+--out_data_file stacked_defaults.hkl
 
 for gpu in $gpus
 do
