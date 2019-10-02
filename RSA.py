@@ -121,6 +121,8 @@ parser.add_argument('--bias', type=str2bool, default=True,
 parser.add_argument('--FC', type=str2bool, default=False,
                     help='Boolean indicating whether to use fully connected' +
                          'convolutional LSTM cell')
+parser.add_argument('--dropout_p', type=float, default=0.0,
+                    help='Proportion dropout for inputs to R cells')
 parser.add_argument('--load_weights_from', default=None,
                     help='Path to saved weights')
 # Hyperparameters unique to LadderNet
@@ -258,9 +260,9 @@ def main(args):
                         args.R_kernel_sizes,args.use_satlu,args.pixel_max,
                         args.Ahat_act,args.satlu_act,args.error_act,
                         args.LSTM_act,args.LSTM_c_act,args.bias,
-                        args.use_1x1_out,args.FC,args.send_acts,args.no_ER,
-                        args.RAhat,args.local_grad,args.conv_dilation,
-                        args.use_BN,model_out,device)
+                        args.use_1x1_out,args.FC,args.dropout_p,
+                        args.send_acts,args.no_ER,args.RAhat,args.local_grad,
+                        args.conv_dilation,args.use_BN,model_out,device)
     elif args.model_type == 'MultiConvLSTM':
         model = MultiConvLSTM(args.in_channels,args.R_stack_sizes,
                               args.R_kernel_sizes,args.use_satlu,args.pixel_max,

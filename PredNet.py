@@ -22,7 +22,7 @@ class RCell(nn.Module):
     """
     def __init__(self, in_channels, hidden_channels, kernel_size,
                  LSTM_act, LSTM_c_act, is_last, bias=True, use_out=True,
-                 FC=False, no_ER=False):
+                 FC=False, no_ER=False, dropout_p=0.0):
         super(RCell, self).__init__()
         self.in_channels = in_channels
         self.hidden_channels = hidden_channels
@@ -32,6 +32,7 @@ class RCell(nn.Module):
         self.use_out = use_out
         self.FC = FC # use fully connected ConvLSTM
         self.no_ER = no_ER
+        self.dropout_p = dropout_p
 
         # Activations
         self.LSTM_act = get_activation(LSTM_act)
@@ -83,6 +84,9 @@ class RCell(nn.Module):
         if use_out:
             self.out = nn.Conv2d(hidden_channels,hidden_channels,1,1,0,1,1)
 
+        # Dropout
+        self.dropout = nn.dropout(dropout_p)
+
     def forward(self, E, R_lp1, hidden):
         H_tm1, C_tm1 = hidden
 
@@ -96,6 +100,9 @@ class RCell(nn.Module):
                 x_t = R_up
         else:
             x_t = E
+
+        # Dropout on inputs
+        x_t = self.dropout(x_t)
 
         # Manual zero-padding to make H,W same
         in_height = x_t.shape[-2]
@@ -252,9 +259,9 @@ class PredNet(nn.Module):
                  A_kernel_sizes,Ahat_kernel_sizes,R_kernel_sizes,
                  use_satlu,pixel_max,Ahat_act,satlu_act,error_act,
                  LSTM_act,LSTM_c_act,bias=True,
-                 use_1x1_out=False,FC=False,send_acts=False,no_ER=False,
-                 RAhat=False,local_grad=False,conv_dilation=1,use_BN=False,
-                 output='error',device='cpu'):
+                 use_1x1_out=False,FC=False,dropout_p=0.0,send_acts=False,
+                 no_ER=False,RAhat=False,local_grad=False,conv_dilation=1,
+                 use_BN=False,output='error',device='cpu'):
         super(PredNet,self).__init__()
         self.in_channels = in_channels
         self.stack_sizes = stack_sizes
@@ -272,6 +279,7 @@ class PredNet(nn.Module):
         self.bias = bias
         self.use_1x1_out=use_1x1_out
         self.FC = FC # use fully connected ConvLSTM
+        self.dropout_p = dropout_p # dropout on inputs to R cells
         self.send_acts = send_acts # send A_t rather than E_t
         self.no_ER = no_ER # no connection between E_l and R_l
         self.RAhat = RAhat # extra connection between R_{l+1} and A_hat_{l}
@@ -322,7 +330,7 @@ class PredNet(nn.Module):
             kernel_size = R_kernel_sizes[l]
             cell = RCell(in_channels,out_channels,kernel_size,
                          LSTM_act,LSTM_c_act,
-                         is_last,self.bias,use_1x1_out,FC,no_ER)
+                         is_last,self.bias,use_1x1_out,FC,no_ER,dropout_p)
             R_layers.append(cell)
         self.R_layers = nn.ModuleList(R_layers)
 
