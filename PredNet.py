@@ -85,7 +85,7 @@ class RCell(nn.Module):
             self.out = nn.Conv2d(hidden_channels,hidden_channels,1,1,0,1,1)
 
         # Dropout
-        self.dropout = nn.dropout(dropout_p)
+        self.dropout = nn.Dropout(dropout_p)
 
     def forward(self, E, R_lp1, hidden):
         H_tm1, C_tm1 = hidden
