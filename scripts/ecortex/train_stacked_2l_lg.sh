@@ -33,7 +33,7 @@ python train.py \
 --R_kernel_sizes 3 3 \
 --FC True \
 --local_grad True \
---layer_lambdas 1.0 1.0 1.0 1.0 \
+--layer_lambdas 1.0 1.0 \
 --learning_rate 0.0001 \
 --lr_steps 0 \
 --results_dir ../results/train_results \
