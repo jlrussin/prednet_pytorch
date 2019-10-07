@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 #SBATCH -p localLimited
 #SBATCH -A ecortex
-#SBATCH --mem=32G
+#SBATCH --mem=25G
 #SBATCH --time=72:00:00
 #SBATCH --gres=gpu:1
-#SBATCH -c 4
+#SBATCH -c 3
 
 export HOME=`getent passwd $USER | cut -d':' -f6`
 export PYTHONUNBUFFERED=1
@@ -13,8 +13,12 @@ echo Running on $HOSTNAME
 source /usr/local/anaconda3/etc/profile.d/conda.sh
 conda activate pytorch1.0
 
-echo "Training PredNet with fc, sigmoid, tanh on CCN dataset"
-echo "Learning rate is 0.0001, no steps in scheduler"
+gpus=$(echo $CUDA_VISIBLE_DEVICES | tr "," "\n")
+for gpu in $gpus
+do
+echo "Setting fan for" $gpu "to full"
+nvidia_fancontrol full $gpu
+done
 
 python train.py \
 --dataset CCN \
@@ -37,3 +41,9 @@ python train.py \
 --checkpoint_every 2 \
 --record_E True \
 --record_loss_every 200
+
+for gpu in $gpus
+do
+echo "Setting fan for " $gpu "back to auto"
+nvidia_fancontrol auto $gpu
+done
