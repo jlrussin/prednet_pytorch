@@ -33,6 +33,8 @@ parser.add_argument('--test_data_path',
                     help='Path to ccn image directory to test')
 parser.add_argument('--seq_len', type=int, default=8,
                     help='Number of images in each ccn sequence')
+parser.add_argument('--downsample_size',type=int,default=128,
+                    help='Height and width of downsampled CCN inputs.')
 parser.add_argument('--last_only',type=str2bool,default=False,
                     help='Train on sequences of static (final) images.')
 parser.add_argument('--batch_size', type=int, default=4,
@@ -297,7 +299,9 @@ def main(args):
         nb_reps = model.nb_layers
 
     # Dataset
-    test_data = CCN(args.test_data_path,args.seq_len,return_labels=True,
+    downsample_size = (args.downsample_size,args.downsample_size)
+    test_data = CCN(args.test_data_path,args.seq_len,
+                    downsample_size=downsample_size,return_labels=True,
                     last_only=args.last_only)
     partitioner = Partitioner(test_data,args.idx_dict_hkl)
     labels = sorted(partitioner.labels)

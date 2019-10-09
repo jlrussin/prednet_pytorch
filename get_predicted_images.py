@@ -29,6 +29,8 @@ parser.add_argument('--test_sources_path',
                     help='Path to test sources hkl file')
 parser.add_argument('--seq_len', type=int, default=10,
                     help='Number of images in each kitti sequence')
+parser.add_argument('--downsample_size',type=int,default=128,
+                    help='Height and width of downsampled CCN inputs.')
 parser.add_argument('--last_only',type=str2bool,default=False,
                     help='Test on sequences of static (final) images.')
 parser.add_argument('--num_seqs', type=int, default=5,
@@ -142,7 +144,9 @@ def main(args):
         test_data = KITTI(args.test_data_path,args.test_sources_path,
                           args.seq_len)
     elif args.dataset == 'CCN':
+        downsample_size = (args.downsample_size,args.downsample_size)
         test_data = CCN(args.test_data_path,args.seq_len,
+                        downsample_size=downsample_size,
                         last_only=args.last_only)
 
     # Load model

@@ -39,6 +39,8 @@ parser.add_argument('--test_data_path',
                     help='Path to test images')
 parser.add_argument('--seq_len', type=int, default=8,
                     help='Number of images in each ccn sequence')
+parser.add_argument('--downsample_size',type=int,default=128,
+                    help='Height and width of downsampled CCN inputs.')
 parser.add_argument('--batch_size', type=int, default=4,
                     help='Samples per batch')
 parser.add_argument('--num_iters', type=int, default=75000,
@@ -213,9 +215,13 @@ def main(args):
         nb_reps = model.nb_layers
 
     # Dataset
-    train_data = CCN(args.train_data_path,args.seq_len,return_cats=True)
-    val_data = CCN(args.val_data_path,args.seq_len,return_cats=True)
-    test_data = CCN(args.test_data_path,args.seq_len,return_cats=True)
+    downsample_size = (args.downsample_size,args.downsample_size)
+    train_data = CCN(args.train_data_path,args.seq_len,
+                     downsample_size=downsample_size,return_cats=True)
+    val_data = CCN(args.val_data_path,args.seq_len,
+                   downsample_size=downsample_size,return_cats=True)
+    test_data = CCN(args.test_data_path,args.seq_len,
+                    downsample_size=downsample_size,return_cats=True)
     train_loader = DataLoader(train_data,args.batch_size,shuffle=True)
     val_loader = DataLoader(val_data,args.batch_size,shuffle=True)
     test_loader = DataLoader(test_data,args.batch_size,shuffle=True)
