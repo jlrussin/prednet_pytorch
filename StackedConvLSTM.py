@@ -113,7 +113,8 @@ class ConvLSTMCell(nn.Module):
 
 class StackedConvLSTM(nn.Module):
     def __init__(self,in_channels,stack_sizes,kernel_sizes,use_1x1_out=False,
-                 FC=True,local_grad=False,output='error',device='cpu'):
+                 FC=True,local_grad=False,forward_conv=False,
+                 output='error',device='cpu'):
         super(StackedConvLSTM,self).__init__()
         self.in_channels = in_channels
         self.stack_sizes = stack_sizes
@@ -121,6 +122,7 @@ class StackedConvLSTM(nn.Module):
         self.use_1x1_out=use_1x1_out
         self.FC = FC # use fully connected ConvLSTM
         self.local_grad = local_grad # gradients only broadcasted within layers
+        self.forward_conv = forward_conv
         self.output = output
         self.device = device
 
@@ -135,8 +137,11 @@ class StackedConvLSTM(nn.Module):
                 in_channels = stack_sizes[l-1]
             hidden_channels = stack_sizes[l]
             kernel_size = kernel_sizes[l]
-            cell = ConvLSTMCell(in_channels,hidden_channels,kernel_size,
-                                use_1x1_out,FC)
+            if self.forward_conv:
+                cell = nn.conv2d(in_channels,hidden_channels,kernel_size)
+            else:
+                cell = ConvLSTMCell(in_channels,hidden_channels,kernel_size,
+                                    use_1x1_out,FC)
             forward_layers.append(cell)
         self.forward_layers = nn.ModuleList(forward_layers)
 
@@ -210,9 +215,13 @@ class StackedConvLSTM(nn.Module):
                         A_t[l] = self.max_pool(R_t_f[l-1])
                 # Compute R_t_f
                 forward_layer = self.forward_layers[l]
-                R_t_f[l], (H_t_f[l],C_t_f[l]) = forward_layer(A_t[l],
-                                                              (H_tm1_f[l],
-                                                               C_tm1_f[l]))
+                if self.forward_conv:
+                    R_t_f[l] = forward_layer(A_t[l])
+                    H_t_f[l],C_t_f[l] = None,None
+                else:
+                    R_t_f[l], (H_t_f[l],C_t_f[l]) = forward_layer(A_t[l],
+                                                                  (H_tm1_f[l],
+                                                                   C_tm1_f[l]))
 
             # Compute errors made on previous timestep
             if t > 0:
@@ -256,7 +265,7 @@ class StackedConvLSTM(nn.Module):
                     outputs.append(Ahat_t[0])
             elif self.output == 'rep':
                 if t == seq_len - 1: # only return reps for last time step
-                    outputs = R_t_f
+                    outputs = R_t_b
             elif self.output == 'error':
                 if t > 0: # first time step doesn't count
                     outputs.append(E_t)

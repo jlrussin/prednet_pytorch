@@ -90,6 +90,9 @@ parser.add_argument('--RAhat', type=str2bool, default=False,
 parser.add_argument('--local_grad', type=str2bool, default=False,
                     help='Boolean indicating whether to restrict gradients ' +
                          'to flow locally (within each layer)')
+parser.add_argument('--forward_conv',type=str2bool,default=False,
+                    help='Boolean indicating whether to use conv2d rather' +
+                         'than convLSTM in forward path of StackedConvLSTM')
 parser.add_argument('--conv_dilation', type=int, default=1,
                     help='Dilation for convolution in ACells')
 parser.add_argument('--use_BN', type=str2bool, default=False,
@@ -183,7 +186,8 @@ def main(args):
     elif args.model_type == 'StackedConvLSTM':
         model = StackedConvLSTM(args.in_channels,args.R_stack_sizes,
                                 args.R_kernel_sizes,args.use_1x1_out,
-                                args.FC,args.local_grad,model_out,device)
+                                args.FC,args.local_grad,args.forward_conv,
+                                model_out,device)
 
     if args.load_weights_from is not None:
         model.load_state_dict(torch.load(args.load_weights_from))
