@@ -138,7 +138,7 @@ class StackedConvLSTM(nn.Module):
             hidden_channels = stack_sizes[l]
             kernel_size = kernel_sizes[l]
             if self.forward_conv:
-                cell = nn.conv2d(in_channels,hidden_channels,kernel_size)
+                cell = nn.Conv2d(in_channels,hidden_channels,kernel_size)
             else:
                 cell = ConvLSTMCell(in_channels,hidden_channels,kernel_size,
                                     use_1x1_out,FC)
