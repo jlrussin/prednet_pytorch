@@ -216,7 +216,12 @@ class StackedConvLSTM(nn.Module):
                 # Compute R_t_f
                 forward_layer = self.forward_layers[l]
                 if self.forward_conv:
-                    R_t_f[l] = forward_layer(A_t[l])
+                    in_height = A_t[l].shape[2]
+                    in_width = A_t[l].shape[3]
+                    padding = get_pad_same(in_height,in_width,
+                                           self.kernel_sizes[l])
+                    A_t_l_padded = F.pad(A_t[l],padding)
+                    R_t_f[l] = forward_layer(A_t_l_padded)
                     H_t_f[l],C_t_f[l] = None,None
                 else:
                     R_t_f[l], (H_t_f[l],C_t_f[l]) = forward_layer(A_t[l],
