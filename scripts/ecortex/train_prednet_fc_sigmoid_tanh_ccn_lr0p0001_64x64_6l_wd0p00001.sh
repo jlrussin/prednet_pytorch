@@ -40,9 +40,9 @@ python train.py \
 --bias True \
 --FC True \
 --layer_lambdas 1.0 0.0 0.0 0.0 0.0 0.0 \
---learning_rate 0.00001 \
+--learning_rate 0.0001 \
 --lr_steps 0 \
---wd 0.0001 \
+--wd 0.00001 \
 --results_dir ../results/train_results \
 --out_data_file train_prednet_fc_sigmoid_tanh_ccn_lr0p0001_64x64_6l_wd0p00001.json \
 --checkpoint_path ../model_weights/train_prednet_fc_sigmoid_tanh_ccn_lr0p0001_64x64_6l_wd0p00001.pt \
