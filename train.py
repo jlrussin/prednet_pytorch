@@ -101,6 +101,8 @@ parser.add_argument('--no_ER', type=str2bool, default=False,
 parser.add_argument('--RAhat', type=str2bool, default=False,
                     help='Boolean indicating whether to add connection' +
                          'between R_lp1 and Ahat_l')
+parser.add_argument('--no_A_conv', type=str2bool, default=False,
+                    help='No convolutional layer in A cells')
 parser.add_argument('--local_grad', type=str2bool, default=False,
                     help='Boolean indicating whether to restrict gradients ' +
                          'to flow locally (within each layer)')
@@ -211,8 +213,9 @@ def main(args):
                         args.Ahat_act,args.satlu_act,args.error_act,
                         args.LSTM_act,args.LSTM_c_act,args.bias,
                         args.use_1x1_out,args.FC,args.dropout_p,
-                        args.send_acts,args.no_ER,args.RAhat,args.local_grad,
-                        args.conv_dilation,args.use_BN,model_out,device)
+                        args.send_acts,args.no_ER,args.RAhat,args.no_A_conv,
+                        args.local_grad,args.conv_dilation,args.use_BN,
+                        model_out,device)
     elif args.model_type == 'MultiConvLSTM':
         model = MultiConvLSTM(args.in_channels,args.R_stack_sizes,
                               args.R_kernel_sizes,args.use_satlu,args.pixel_max,
@@ -232,7 +235,7 @@ def main(args):
                           args.Ahat_act,args.satlu_act,args.error_act,
                           args.LSTM_act,args.LSTM_c_act,args.bias,
                           args.use_1x1_out,args.FC,args.no_R0,args.no_skip0,
-                          args.local_grad,model_out,device)
+                          args.no_A_conv,args.local_grad,model_out,device)
     elif args.model_type == 'StackedConvLSTM':
         model = StackedConvLSTM(args.in_channels,args.R_stack_sizes,
                                 args.R_kernel_sizes,args.use_1x1_out,
@@ -456,5 +459,10 @@ if __name__ == '__main__':
         model_has_E = args.model_type in ['PredNet','MultiConvLSTM',
                                           'LadderNet','StackedConvLSTM']
         assert model_has_E and args.loss == 'E', msg
+    if args.local_grad and not args.no_A_conv:
+        warn = "WARNING: TRAINING WITH LOCAL GRADIENTS DOES NOT MAKE SENSE " +
+               "WHEN THERE ARE CONVOLUTIONAL LAYERS IN A CELLS. DON'T GIVE " +
+               "LAYERS CONTROL OVER THEIR OWN TARGETS!"
+        print(warn)
     main(args)
     print("Total training time: ", time.time() - start_train_time)

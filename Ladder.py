@@ -110,7 +110,7 @@ class LadderNet(nn.Module):
                  conv_dilation,use_BN,use_satlu,pixel_max,A_act,Ahat_act,
                  satlu_act,error_act,LSTM_act,LSTM_c_act,bias=True,
                  use_1x1_out=False,FC=True,no_R0=True,no_skip0=True,
-                 local_grad=False,
+                 no_A_conv=False,local_grad=False,
                  output='error',device='cpu'):
         super(LadderNet,self).__init__()
         self.in_channels = in_channels
@@ -133,12 +133,13 @@ class LadderNet(nn.Module):
         self.use_1x1_out=use_1x1_out
         self.no_R0 = no_R0 # no R Cell for pixel-layer, preds come from Ahat_lp1
         self.no_skip0 = no_skip0 # no skip between A0 and Ahat0
+        self.no_A_conv = no_A_conv # no convolutional layers in A cells
         self.local_grad = local_grad # gradients only broadcasted within layers
         self.output = output
         self.device = device
 
         # local gradients means no convolution in A, stack sizes is fixed
-        if local_grad:
+        if no_A_conv:
             stack_sizes = [in_channels for s in range(len(stack_sizes))]
             self.stack_sizes = stack_sizes
 
@@ -155,7 +156,6 @@ class LadderNet(nn.Module):
         assert len(R_kernel_sizes) == self.nb_layers, msg
 
         # A cells: (conv) + nonlinearity + MaxPool
-        no_conv = local_grad # no convolutional layer if using local_grad
         A_layers = [None] # First A layer is input
         for l in range(1,self.nb_layers): # First A layer is input
             in_channels = stack_sizes[l-1] # input will be A_t_lm1
@@ -163,7 +163,7 @@ class LadderNet(nn.Module):
             conv_kernel_size = A_kernel_sizes[l-1]
             cell = ACell(in_channels,out_channels,
                          conv_kernel_size,conv_dilation,bias,
-                         no_conv,use_BN,A_act)
+                         no_A_conv,use_BN,A_act)
             A_layers.append(cell)
         self.A_layers = nn.ModuleList(A_layers)
 

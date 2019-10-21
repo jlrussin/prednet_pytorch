@@ -260,8 +260,8 @@ class PredNet(nn.Module):
                  use_satlu,pixel_max,Ahat_act,satlu_act,error_act,
                  LSTM_act,LSTM_c_act,bias=True,
                  use_1x1_out=False,FC=False,dropout_p=0.0,send_acts=False,
-                 no_ER=False,RAhat=False,local_grad=False,conv_dilation=1,
-                 use_BN=False,output='error',device='cpu'):
+                 no_ER=False,RAhat=False,no_A_conv=False,local_grad=False,
+                 conv_dilation=1,use_BN=False,output='error',device='cpu'):
         super(PredNet,self).__init__()
         self.in_channels = in_channels
         self.stack_sizes = stack_sizes
@@ -283,14 +283,15 @@ class PredNet(nn.Module):
         self.send_acts = send_acts # send A_t rather than E_t
         self.no_ER = no_ER # no connection between E_l and R_l
         self.RAhat = RAhat # extra connection between R_{l+1} and A_hat_{l}
+        self.no_A_conv = no_A_conv
         self.local_grad = local_grad # gradients only broadcasted within layers
         self.conv_dilation = conv_dilation # dilation in A cells
         self.use_BN = use_BN
         self.output = output
         self.device = device
 
-        # local gradients means no convolution in A, stack sizes is fixed
-        if local_grad:
+        # no convolution in A means stack sizes is fixed
+        if no_A_conv:
             if send_acts:
                 # A_l receives from A_{l-1} - all A's have same channel dim
                 stack_sizes = [in_channels for s in range(len(stack_sizes))]
@@ -335,7 +336,6 @@ class PredNet(nn.Module):
         self.R_layers = nn.ModuleList(R_layers)
 
         # A cells: conv + ReLU + MaxPool
-        no_conv = local_grad # no convolutional layer if using local_grad
         A_layers = [None]
         for l in range(1,self.nb_layers): # First A layer is input
             if not self.send_acts:
@@ -345,7 +345,7 @@ class PredNet(nn.Module):
             out_channels = stack_sizes[l]
             conv_kernel_size = A_kernel_sizes[l-1]
             cell = ACell(in_channels,out_channels,
-                         conv_kernel_size,conv_dilation,bias,no_conv,use_BN)
+                         conv_kernel_size,conv_dilation,bias,no_A_conv,use_BN)
             A_layers.append(cell)
         self.A_layers = nn.ModuleList(A_layers)
 
