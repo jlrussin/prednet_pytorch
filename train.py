@@ -459,9 +459,10 @@ if __name__ == '__main__':
         model_has_E = args.model_type in ['PredNet','MultiConvLSTM',
                                           'LadderNet','StackedConvLSTM']
         assert model_has_E and args.loss == 'E', msg
-    if args.local_grad and not args.no_A_conv:
-        print("WARNING: TRAINING WITH LOCAL GRADIENTS DOES NOT MAKE SENSE "
-               "WHEN THERE ARE CONVOLUTIONAL LAYERS IN A CELLS. DON'T GIVE "
-               "LAYERS CONTROL OVER THEIR OWN TARGETS!")
+    if args.model_type in ['PredNet','LadderNet']:
+        if args.local_grad and not args.no_A_conv:
+            print("WARNING: TRAINING WITH LOCAL GRADIENTS DOES NOT MAKE SENSE "
+                   "WHEN THERE ARE CONVOLUTIONAL LAYERS IN A CELLS. DON'T GIVE "
+                   "LAYERS CONTROL OVER THEIR OWN TARGETS!")
     main(args)
     print("Total training time: ", time.time() - start_train_time)
