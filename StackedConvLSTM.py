@@ -174,7 +174,6 @@ class StackedConvLSTM(nn.Module):
             conv = nn.Conv2d(in_channels,out_channels,kernel_size)
             conv_layers.append(conv)
         self.conv_layers = nn.ModuleList(conv_layers)
-        self.tanh = nn.Tanh() # Ahat always uses tanh activation
 
         # E layer for computing errors: [ReLU(A-Ahat);ReLU(Ahat-A)]
         self.E_layer = ECell('relu')
