@@ -37,6 +37,7 @@ python train.py \
 --Ahat_act lrelu \
 --use_satlu True \
 --satlu_act sigmoid \
+--no_A_conv True \
 --local_grad True \
 --conv_dilation 1 \
 --use_BN True \
