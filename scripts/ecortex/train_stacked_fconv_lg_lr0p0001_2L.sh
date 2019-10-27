@@ -35,7 +35,7 @@ python train.py \
 --FC True \
 --local_grad True \
 --forward_conv True \
---layer_lambdas 1.0 0.0 \
+--layer_lambdas 1.0 1.0 \
 --learning_rate 0.0001 \
 --lr_steps 0 \
 --results_dir ../results/train_results \
