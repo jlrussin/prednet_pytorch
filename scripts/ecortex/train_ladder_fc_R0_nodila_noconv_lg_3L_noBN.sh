@@ -53,7 +53,6 @@ python train.py \
 --lr_steps 0 \
 --results_dir ../results/train_results \
 --out_data_file train_ladder_fc_R0_nodila_noconv_lg_3L_noBN.json \
---load_weights_from ../model_weights/train_ladder_fc_R0_nodila_noconv_lg_3L_noBN.pt \
 --checkpoint_path ../model_weights/train_ladder_fc_R0_nodila_noconv_lg_3L_noBN.pt \
 --checkpoint_every 2 \
 --record_E True \
