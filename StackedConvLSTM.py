@@ -179,8 +179,13 @@ class StackedConvLSTM(nn.Module):
         self.E_layer = ECell('relu')
 
         # Activations
-        self.sigmoid = nn.Sigmoid() # layer 0 Ahat activation
-        self.tanh = nn.Tanh() # all other Ahat activations
+        if self.forwrad_conv:
+            self.forward_act = nn.ReLU()
+            self.Ahat_act = nn.ReLU()
+        else:
+            # forward act is output tanh of R cells
+            self.Ahat_act = nn.Tanh() # Ahat matches R output activation
+        self.Ahat0_act = nn.Sigmoid() # layer 0 Ahat activation
 
     def forward(self,X):
         # Get initial states
@@ -221,6 +226,7 @@ class StackedConvLSTM(nn.Module):
                                            self.kernel_sizes[l])
                     A_t_l_padded = F.pad(A_t[l],padding)
                     R_t_f[l] = forward_layer(A_t_l_padded)
+                    R_t_f[l] = self.forward_act(R_t_f[l])
                     H_t_f[l],C_t_f[l] = None,None
                 else:
                     R_t_f[l], (H_t_f[l],C_t_f[l]) = forward_layer(A_t[l],
@@ -255,9 +261,9 @@ class StackedConvLSTM(nn.Module):
                 conv_layer = self.conv_layers[l]
                 Ahat_t[l] = conv_layer(R_t_b_l_padded)
                 if l == 0:
-                    Ahat_t[l] = self.sigmoid(Ahat_t[l])
+                    Ahat_t[l] = self.Ahat0_act(Ahat_t[l])
                 else:
-                    Ahat_t[l] = self.tanh(Ahat_t[l])
+                    Ahat_t[l] = self.Ahat_act(Ahat_t[l])
 
             # Update hidden states
             (H_tm1_f,C_tm1_f) = (H_t_f,C_t_f)

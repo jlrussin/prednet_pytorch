@@ -206,7 +206,8 @@ class LadderNet(nn.Module):
                 no_Ahat_lp1 = False
             out_channels = stack_sizes[l]
             conv_kernel_size = Ahat_kernel_sizes[l]
-            use_satlu = self.use_satlu and l == 0 # Lowest layer uses SatLU
+            # Use SatLU when no A conv or lowest layer
+            use_satlu = self.use_satlu and (l == 0 or self.no_A_conv)
             cell = LAhatCell(R_in_channels,A_in_channels,Ahat_in_channels,
                              out_channels,conv_kernel_size,
                              self.bias,act=Ahat_act,use_BN=use_BN,

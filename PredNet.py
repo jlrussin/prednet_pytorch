@@ -358,8 +358,8 @@ class PredNet(nn.Module):
                 in_channels = R_stack_sizes[l]
             out_channels = stack_sizes[l]
             conv_kernel_size = Ahat_kernel_sizes[l]
-            if self.use_satlu and l == 0:
-                # Lowest layer uses SatLU
+            # Use satlu with lowest layer or when no A conv (pixels in [0,1])
+            if self.use_satlu and (l==0 or self.no_A_conv):
                 cell = AhatCell(in_channels,out_channels,
                                 conv_kernel_size,bias,Ahat_act,satlu_act,
                                 use_satlu=True,pixel_max=pixel_max,
