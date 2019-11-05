@@ -34,7 +34,7 @@ python train.py \
 --A_kernel_sizes 3 3 3 \
 --Ahat_kernel_sizes 3 3 3 3 \
 --R_kernel_sizes 3 3 3 3 \
---Ahat_act lrelu \
+--Ahat_act relu \
 --use_satlu True \
 --satlu_act sigmoid \
 --local_grad False \
