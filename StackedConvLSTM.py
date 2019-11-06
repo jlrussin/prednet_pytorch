@@ -179,7 +179,7 @@ class StackedConvLSTM(nn.Module):
         self.E_layer = ECell('relu')
 
         # Activations
-        if self.forwrad_conv:
+        if self.forward_conv:
             self.forward_act = nn.ReLU()
             self.Ahat_act = nn.ReLU()
         else:
