@@ -34,6 +34,7 @@ python train.py \
 --bias True \
 --FC True \
 --send_acts True \
+--no_A_conv True \
 --local_grad True \
 --layer_lambdas 1.0 1.0 1.0 1.0 \
 --learning_rate 0.0001 \

@@ -36,6 +36,7 @@ python train.py \
 --LSTM_c_act tanh \
 --bias True \
 --FC True \
+--no_A_conv True \
 --local_grad True \
 --layer_lambdas 1.0 1.0 1.0 1.0 \
 --learning_rate 0.0001 \
