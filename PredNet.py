@@ -260,8 +260,9 @@ class PredNet(nn.Module):
                  use_satlu,pixel_max,Ahat_act,satlu_act,error_act,
                  LSTM_act,LSTM_c_act,bias=True,
                  use_1x1_out=False,FC=False,dropout_p=0.0,send_acts=False,
-                 no_ER=False,RAhat=False,no_A_conv=False,local_grad=False,
-                 conv_dilation=1,use_BN=False,output='error',device='cpu'):
+                 no_ER=False,RAhat=False,no_A_conv=False,higher_satlu=False,
+                 local_grad=False,conv_dilation=1,use_BN=False,output='error',
+                 device='cpu'):
         super(PredNet,self).__init__()
         self.in_channels = in_channels
         self.stack_sizes = stack_sizes
@@ -284,6 +285,7 @@ class PredNet(nn.Module):
         self.no_ER = no_ER # no connection between E_l and R_l
         self.RAhat = RAhat # extra connection between R_{l+1} and A_hat_{l}
         self.no_A_conv = no_A_conv
+        self.higher_satlu = higher_satlu # higher layers use satlu
         self.local_grad = local_grad # gradients only broadcasted within layers
         self.conv_dilation = conv_dilation # dilation in A cells
         self.use_BN = use_BN
@@ -359,7 +361,7 @@ class PredNet(nn.Module):
             out_channels = stack_sizes[l]
             conv_kernel_size = Ahat_kernel_sizes[l]
             # Use satlu with lowest layer or when no A conv (pixels in [0,1])
-            if self.use_satlu and (l==0 or self.no_A_conv):
+            if self.use_satlu and (l==0 or self.higher_satlu):
                 cell = AhatCell(in_channels,out_channels,
                                 conv_kernel_size,bias,Ahat_act,satlu_act,
                                 use_satlu=True,pixel_max=pixel_max,

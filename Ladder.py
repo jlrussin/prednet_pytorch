@@ -110,7 +110,7 @@ class LadderNet(nn.Module):
                  conv_dilation,use_BN,use_satlu,pixel_max,A_act,Ahat_act,
                  satlu_act,error_act,LSTM_act,LSTM_c_act,bias=True,
                  use_1x1_out=False,FC=True,no_R0=True,no_skip0=True,
-                 no_A_conv=False,local_grad=False,
+                 no_A_conv=False,higher_satlu=False,local_grad=False,
                  output='error',device='cpu'):
         super(LadderNet,self).__init__()
         self.in_channels = in_channels
@@ -134,6 +134,7 @@ class LadderNet(nn.Module):
         self.no_R0 = no_R0 # no R Cell for pixel-layer, preds come from Ahat_lp1
         self.no_skip0 = no_skip0 # no skip between A0 and Ahat0
         self.no_A_conv = no_A_conv # no convolutional layers in A cells
+        self.higher_satlu = higher_satlu # higher layers use satlu
         self.local_grad = local_grad # gradients only broadcasted within layers
         self.output = output
         self.device = device
@@ -207,7 +208,7 @@ class LadderNet(nn.Module):
             out_channels = stack_sizes[l]
             conv_kernel_size = Ahat_kernel_sizes[l]
             # Use SatLU when no A conv or lowest layer
-            use_satlu = self.use_satlu and (l == 0 or self.no_A_conv)
+            use_satlu = self.use_satlu and (l == 0 or self.higher_satlu)
             cell = LAhatCell(R_in_channels,A_in_channels,Ahat_in_channels,
                              out_channels,conv_kernel_size,
                              self.bias,act=Ahat_act,use_BN=use_BN,
